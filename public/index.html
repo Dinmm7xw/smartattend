@@ -29,22 +29,34 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="logo.png"/>
 
+  <!-- Cache-Busting Headers for instant live updates -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
   <title>SmartAttend — Ақылды Қатысу Жүйесі</title>
   <link rel="manifest" href="manifest.json">
   <!-- SmartAttend Page Transition Loader & Transparent Stickers -->
   <link rel="stylesheet" href="page_loader.css">
 </head>
 <body>
+  <!-- Auto-clear stale ServiceWorker caches -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (var registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
+    if ('caches' in window) {
+      caches.keys().then(function(names) {
+        for (var name of names) caches.delete(name);
+      });
+    }
+  </script>
   <!-- Page Loader Component Script -->
   <script src="page_loader.js"></script>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
-
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
-  -->
-  <script src="flutter_bootstrap.js" async></script>
+  <script src="flutter_bootstrap.js?v=20261011_v4" async></script>
 </body>
 </html>
