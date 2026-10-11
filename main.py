@@ -379,6 +379,89 @@ async def update_my_avatar(req: UpdateAvatarRequest, current: dict = Depends(get
     conn.close()
     return {"success": True, "message": "Профиль суреті жаңартылды", "avatar_url": data_url}
 
+# ── ВОССТАНОВЛЕНИЕ ПАРОЛЯ ЧЕРЕЗ FACE ID (БИОМЕТРИЯ) ──────────────────────────
+
+class RecoverInitiateRequest(BaseModel):
+    identifier: str
+
+class RecoverResetRequest(BaseModel):
+    identifier: str
+    new_password: str
+    face_verified: bool = True
+
+@app.post("/api/auth/recover/initiate")
+async def recover_initiate(req: RecoverInitiateRequest):
+    """
+    Поиск пользователя по логину/Email/ИИН/ID перед сканированием лица Face ID.
+    """
+    ident = (req.identifier or "").strip()
+    if not ident:
+        raise HTTPException(status_code=400, detail="ИИН, Email немесе логинді енгізіңіз")
+    
+    conn, engine = get_db()
+    cur = conn.cursor()
+    query = ("SELECT id, email, full_name, role, student_id, department, avatar_url FROM users "
+             "WHERE (LOWER(email) = LOWER(%s) OR student_id = %s OR phone = %s)"
+             if engine == "postgres" else
+             "SELECT id, email, full_name, role, student_id, department, avatar_url FROM users "
+             "WHERE (LOWER(email) = LOWER(?) OR student_id = ? OR phone = ?)")
+    cur.execute(query, (ident, ident, ident))
+    row = cur.fetchone()
+    conn.close()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Колледж базасынан мұндай қолданушы табылмады")
+
+    u = dict(row)
+    return {
+        "success": True,
+        "user": {
+            "id": u["id"],
+            "full_name": u["full_name"],
+            "email": u["email"],
+            "role": u.get("role", "STUDENT"),
+            "student_id": u.get("student_id"),
+            "department": u.get("department"),
+            "avatar_url": u.get("avatar_url")
+        }
+    }
+
+@app.post("/api/auth/recover/reset")
+async def recover_reset(req: RecoverResetRequest):
+    """
+    Сброс пароля после успешного прохождения биометрии Face ID.
+    """
+    ident = (req.identifier or "").strip()
+    new_pwd = (req.new_password or "").strip()
+
+    if not ident:
+        raise HTTPException(status_code=400, detail="Логин табылмады")
+    if not req.face_verified:
+        raise HTTPException(status_code=403, detail="Face ID биометриясы расталмады!")
+    if len(new_pwd) < 6:
+        raise HTTPException(status_code=400, detail="Жаңа құпия сөз кемінде 6 таңбадан тұруы керек")
+
+    conn, engine = get_db()
+    cur = conn.cursor()
+    p_ph = "%s" if engine == "postgres" else "?"
+    query_find = (f"SELECT id FROM users WHERE (LOWER(email) = LOWER({p_ph}) OR student_id = {p_ph} OR phone = {p_ph})")
+    cur.execute(query_find, (ident, ident, ident))
+    row = cur.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Қолданушы табылмады")
+
+    user_id = dict(row)["id"]
+    cur.execute(f"UPDATE users SET password_hash = {p_ph} WHERE id = {p_ph}", (new_pwd, user_id))
+    conn.commit()
+    conn.close()
+
+    return {
+        "success": True,
+        "message": "Құпия сөз Face ID арқылы сәтті қалпына келтірілді! Жүйеге жаңа құпия сөзбен кіріңіз."
+    }
+
+
 # ── S-STUDENT (СТУДЕНТ) ──
 
 @app.get("/api/student/dashboard")

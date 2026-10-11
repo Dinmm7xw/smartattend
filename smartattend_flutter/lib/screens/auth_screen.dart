@@ -5,6 +5,7 @@ import '../constants/theme.dart';
 import '../constants/i18n.dart';
 import '../models/models.dart';
 import '../services/api_service.dart';
+import '../widgets/face_recovery_modal.dart';
 
 class AuthScreen extends StatefulWidget {
   final Function(UserModel) onLogin;
@@ -84,6 +85,38 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
         _errorMessage = res['message'] ?? 'Қате логин немесе құпия сөз! Бұл қолданушы колледж базасында жоқ.';
       });
     }
+  }
+
+  void _openFaceRecovery() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => FaceRecoveryModal(
+        lang: widget.lang,
+        onSuccess: (ident, newPass) {
+          Navigator.pop(context);
+          setState(() {
+            _emailCtrl.text = ident;
+            _passCtrl.text = newPass;
+            _errorMessage = null;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                widget.lang == 'ru'
+                    ? 'Пароль успешно обновлён через Face ID! Нажмите «Войти»'
+                    : widget.lang == 'en'
+                        ? 'Password updated via Face ID! Click "Sign in"'
+                        : 'Құпия сөз Face ID арқылы жаңартылды! «Кіру» түймесін басыңыз',
+              ),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        },
+        onClose: () => Navigator.pop(context),
+      ),
+    );
   }
 
   @override
@@ -311,7 +344,39 @@ class _AuthScreenState extends State<AuthScreen> with SingleTickerProviderStateM
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
+
+          // Forgot password / Face ID Recovery
+          Align(
+            alignment: Alignment.centerRight,
+            child: InkWell(
+              onTap: _openFaceRecovery,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.face_retouching_natural_rounded, size: 16, color: AppColors.primary),
+                    const SizedBox(width: 6),
+                    Text(
+                      widget.lang == 'ru'
+                          ? 'Забыли пароль? Face ID'
+                          : widget.lang == 'en'
+                              ? 'Forgot password? Face ID'
+                              : 'Құпия сөзді ұмыттыңыз ба? Face ID',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
 
           // Error banner
           if (_errorMessage != null) ...[

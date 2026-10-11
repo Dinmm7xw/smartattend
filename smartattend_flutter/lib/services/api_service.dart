@@ -116,6 +116,48 @@ class ApiService {
     }
   }
 
+  // ── Password Recovery via Face ID ─────────────────────────
+  static Future<Map<String, dynamic>> recoverInitiate(String identifier) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/auth/recover/initiate'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'identifier': identifier}),
+      ).timeout(const Duration(seconds: 15));
+      final data = jsonDecode(res.body);
+      if (res.statusCode == 200 && data['success'] == true) {
+        return {'success': true, 'user': data['user']};
+      }
+      return {'success': false, 'message': data['detail']?.toString() ?? 'Қолданушы табылмады'};
+    } catch (e) {
+      return {'success': false, 'message': 'Серверге қосылу қатесі: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> recoverReset({
+    required String identifier,
+    required String newPassword,
+    bool faceVerified = true,
+  }) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/auth/recover/reset'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'identifier': identifier,
+          'new_password': newPassword,
+          'face_verified': faceVerified,
+        }),
+      ).timeout(const Duration(seconds: 20));
+      final data = jsonDecode(res.body);
+      if (res.statusCode == 200 && data['success'] == true) {
+        return {'success': true, 'message': data['message']};
+      }
+      return {'success': false, 'message': data['detail']?.toString() ?? 'Қате орын алды'};
+    } catch (e) {
+      return {'success': false, 'message': 'Серверге қосылу қатесі: $e'};
+    }
+  }
 
   // ── Health Check ──────────────────────────────────────────
   static Future<bool> checkBackendHealth() async {
