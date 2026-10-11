@@ -1,0 +1,38 @@
+# Python & Virtualenv
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+.env.*
+!.env.example
+venv/
+env/
+.venv/
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+smartattend.db
+
+# Heavy AI model binaries (better pulled via releases or stored outside git if needed)
+# *.onnx
+
+# Flutter / Dart
+smartattend_flutter/.dart_tool/
+smartattend_flutter/.flutter-plugins
+smartattend_flutter/.flutter-plugins-dependencies
+smartattend_flutter/.packages
+smartattend_flutter/.pub-cache/
+smartattend_flutter/.pub/
+smartattend_flutter/build/
+
+# Android build outputs & caches
+smartattend_flutter/android/.gradle/
+smartattend_flutter/android/local.properties
+smartattend_flutter/android/gradle-*.zip
+
+# OS Generated
+.DS_Store
+Thumbs.db
+*.log

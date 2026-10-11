@@ -1,0 +1,1933 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Astana IT University — Интерактивная Карта Кампуса (3D Vector Navigation)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="page_loader.css">
+  <script src="page_loader.js"></script>
+  
+  <style>
+    :root {
+      --bg-dark: #0a0e17;
+      --panel-bg: rgba(14, 19, 29, 0.92);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --accent-blue: #4f46e5;
+      --accent-cyan: #38bdf8;
+
+      /* ── SMARTATTEND EXCLUSIVE PALETTE ── */
+      --color-room-main: #3730a3;        /* Rich Deep Indigo */
+      --color-room-main-hover: #4f46e5;  /* Electric Indigo Glow */
+      --color-room-special: #b45309;     /* Warm Amber / Bronze */
+      --color-room-special-hover: #d97706;/* Sunset Gold Glow */
+      --color-room-service: #1e293b;     /* Neutral Slate */
+      --color-room-tech: #111827;
+      --color-room-target: #f43f5e;      /* Neon Rose Pulse */
+      --color-map-stroke: #334155;
+      --color-map-bg: #0f172a;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ══════════════════════════════════════════════════
+       TOP HEADER & NAVIGATION BAR
+       ══════════════════════════════════════════════════ */
+    .header-bar {
+      height: 64px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--panel-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      z-index: 50;
+      flex-shrink: 0;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .aitu-badge {
+      background: linear-gradient(135deg, #4f46e5, #06b6d4);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 900;
+      padding: 5px 11px;
+      border-radius: 8px;
+      letter-spacing: 0.05em;
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+    }
+
+    .brand-text h1 {
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-text p {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Search Control */
+    .center-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .search-box-wrap {
+      display: flex;
+      align-items: center;
+      background: #131b26;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      overflow: hidden;
+      width: 380px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-box-wrap:focus-within {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25);
+    }
+
+    .scope-select {
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 12px;
+      outline: none;
+      border-right: 1px solid #1e293b;
+      cursor: pointer;
+    }
+
+    .scope-select option {
+      background: #131b26;
+      color: #fff;
+    }
+
+    .search-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #fff;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .search-input::placeholder {
+      color: #64748b;
+    }
+
+    .search-icon-btn {
+      background: none;
+      border: none;
+      color: #64748b;
+      padding: 0 14px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+
+    .search-icon-btn:hover {
+      color: var(--accent-cyan);
+    }
+
+    /* Top Right Action & Language Switcher */
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .lang-switcher {
+      display: flex;
+      background: #131b26;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .lang-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 800;
+      padding: 5px 9px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .lang-btn.active {
+      background: var(--accent-blue);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
+    }
+
+    .schedule-pill {
+      background: rgba(79, 70, 229, 0.18);
+      border: 1px solid rgba(79, 70, 229, 0.45);
+      color: #a5b4fc;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .schedule-pill:hover {
+      background: rgba(79, 70, 229, 0.35);
+      transform: translateY(-1px);
+    }
+
+    /* ══════════════════════════════════════════════════
+       QUICK NAVIGATION BAR (5 KEY LOCATIONS)
+       ══════════════════════════════════════════════════ */
+    .poi-nav-bar {
+      height: 44px;
+      background: rgba(15, 20, 30, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 16px;
+      z-index: 45;
+      flex-shrink: 0;
+    }
+
+    .poi-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 13px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .poi-btn:hover {
+      background: rgba(79, 70, 229, 0.2);
+      border-color: rgba(79, 70, 229, 0.5);
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+    }
+
+    .poi-btn.poi-med:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.5);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+    }
+
+    /* ══════════════════════════════════════════════════
+       MAIN MAP VIEWPORT
+       ══════════════════════════════════════════════════ */
+    .map-viewport {
+      flex: 1;
+      position: relative;
+      background: radial-gradient(circle at 50% 50%, #0f1522 0%, #07090e 100%);
+      overflow: hidden;
+      cursor: grab;
+    }
+
+    .map-viewport:active {
+      cursor: grabbing;
+    }
+
+    #map-transform-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform-origin: center center;
+      transition: transform 0.05s ease-out;
+      will-change: transform;
+      width: 1400px;
+      height: 600px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #map-svg-root {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    /* ══════════════════════════════════════════════════
+       CUSTOM VECTOR FLOOR MAP STYLING (EXCLUSIVE)
+       ══════════════════════════════════════════════════ */
+    .map-bg {
+      stroke: var(--color-map-stroke) !important;
+      stroke-width: 1.2px !important;
+      fill: var(--color-map-bg) !important;
+      filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.7));
+    }
+
+    .map-label-huge {
+      fill: #475569 !important;
+      stroke: none !important;
+      font-weight: 900 !important;
+      pointer-events: none !important;
+      opacity: 0.6;
+    }
+
+    /* Auditoriums / Classrooms */
+    .map-groups-rooms g line,
+    .map-groups-rooms g polygon,
+    .map-groups-rooms g polyline,
+    .map-groups-rooms g rect {
+      stroke: #1e293b !important;
+      stroke-width: 1px !important;
+      fill: var(--color-room-main) !important;
+      cursor: pointer;
+      transition: fill 0.15s ease, filter 0.15s ease;
+    }
+
+    .map-groups-rooms g:hover line,
+    .map-groups-rooms g:hover polygon,
+    .map-groups-rooms g:hover polyline,
+    .map-groups-rooms g:hover rect {
+      fill: var(--color-room-main-hover) !important;
+      filter: drop-shadow(0 0 12px rgba(79, 70, 229, 0.8));
+    }
+
+    /* Room Number Digits */
+    .map-groups-rooms g path {
+      stroke: #ffffff !important;
+      stroke-width: 0.2px !important;
+      fill: #ffffff !important;
+      pointer-events: none !important;
+    }
+
+    /* Special / VK Rooms (Warm Amber & Bronze Palette) */
+    .map-groups-rooms-vk g line,
+    .map-groups-rooms-vk g polygon,
+    .map-groups-rooms-vk g polyline {
+      stroke: #1e293b !important;
+      stroke-width: 1px !important;
+      fill: var(--color-room-special) !important;
+      cursor: pointer;
+      transition: fill 0.15s ease;
+    }
+
+    .map-groups-rooms-vk g:hover line,
+    .map-groups-rooms-vk g:hover polygon,
+    .map-groups-rooms-vk g:hover polyline {
+      fill: var(--color-room-special-hover) !important;
+      filter: drop-shadow(0 0 12px rgba(217, 119, 6, 0.8));
+    }
+
+    .map-groups-rooms-vk g path {
+      stroke: #ffffff !important;
+      stroke-width: 0.2px !important;
+      fill: #ffffff !important;
+      pointer-events: none !important;
+    }
+
+    /* Gym & Sports */
+    .map-groups-gym line,
+    .map-groups-gym path,
+    .map-groups-gym polygon,
+    .map-groups-gym polyline {
+      stroke: var(--color-map-stroke) !important;
+      fill: var(--color-room-main) !important;
+      cursor: pointer;
+    }
+
+    .map-groups-gym-pole line,
+    .map-groups-gym-pole path,
+    .map-groups-gym-pole polygon {
+      stroke: var(--color-map-stroke) !important;
+      stroke-width: 0.75px !important;
+      fill: none !important;
+      pointer-events: none !important;
+    }
+
+    /* Stairs */
+    .map-groups-stairs polygon,
+    .map-groups-stairs polyline {
+      stroke: #475569 !important;
+      stroke-width: 0.8px !important;
+      fill: #232d3f !important;
+      cursor: pointer !important;
+      pointer-events: auto !important;
+      transition: fill 0.2s, stroke 0.2s;
+    }
+    .map-groups-stairs:hover polygon,
+    .map-groups-stairs:hover polyline {
+      fill: #3b4d66 !important;
+      stroke: #94a3b8 !important;
+    }
+
+    /* Service / WCs / Toilets */
+    .map-groups-wcs polygon,
+    .map-groups-wcs polyline {
+      stroke: var(--color-map-stroke) !important;
+      fill: var(--color-room-service) !important;
+      pointer-events: none !important;
+    }
+
+    /* Completely hide all icon badges */
+    .map-groups-wcs-icon,
+    .map-groups-escapes-icon,
+    #ICONS_COMMON,
+    #ICONS_ESCAPES_SECOND_THIRD {
+      display: none !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+    }
+
+    /* Tech rooms & Escapes */
+    .map-groups-techs polygon,
+    .map-groups-techs polyline,
+    .map-groups-escapes polygon,
+    .map-groups-escapes polyline {
+      stroke: var(--color-map-stroke) !important;
+      fill: var(--color-room-tech) !important;
+      pointer-events: none !important;
+    }
+
+    /* Assembly Zone on Floor 2 */
+    .assembly-zone-f2 {
+      fill: #131b26 !important;
+      stroke: #2b3648 !important;
+      stroke-width: 1.5px !important;
+      stroke-dasharray: 6 4 !important;
+      pointer-events: none !important;
+    }
+
+    .map-label path {
+      fill: #64748b !important;
+      stroke: none !important;
+      pointer-events: none !important;
+    }
+
+    /* Suppress void/black holes */
+    .map-groups-void,
+    .map-groups-void path,
+    .map-groups-void polygon,
+    .map-groups-void polyline {
+      display: none !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+    }
+
+    #map-svg-root polygon,
+    #map-svg-root polyline {
+      fill: #161e2b;
+      stroke: var(--color-map-stroke);
+    }
+
+    /* Coworking */
+    .map-groups-coworking-atameken path {
+      stroke: var(--color-map-stroke) !important;
+      fill: #161e2b !important;
+      cursor: pointer;
+    }
+    .map-groups-coworking-atameken path:not(:first-child) {
+      display: none !important;
+    }
+
+    /* TARGET / SEARCHED ROOM PULSE ANIMATION */
+    .room-map-group-search-target line,
+    .room-map-group-search-target polygon,
+    .room-map-group-search-target polyline,
+    .room-map-group-search-target rect {
+      fill: var(--color-room-target) !important;
+      stroke: #ffffff !important;
+      stroke-width: 2.5px !important;
+      filter: drop-shadow(0 0 16px rgba(244, 63, 94, 0.9)) !important;
+      animation: targetPulse 1.2s infinite alternate ease-in-out !important;
+    }
+
+    @keyframes targetPulse {
+      0% {
+        fill: #f43f5e;
+        filter: drop-shadow(0 0 12px rgba(244, 63, 94, 0.7));
+      }
+      100% {
+        fill: #fb7185;
+        filter: drop-shadow(0 0 24px rgba(244, 63, 94, 1));
+      }
+    }
+
+    /* ══════════════════════════════════════════════════
+       FLOOR SELECTOR WIDGET
+       ══════════════════════════════════════════════════ */
+    .floor-widget {
+      position: absolute;
+      right: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--panel-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      z-index: 40;
+    }
+
+    .floor-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .floor-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .floor-btn.active {
+      background: #ffffff;
+      color: #0c1017;
+      box-shadow: 0 4px 16px rgba(255, 255, 255, 0.3);
+    }
+
+    /* ══════════════════════════════════════════════════
+       ZOOM CONTROLS
+       ══════════════════════════════════════════════════ */
+    .zoom-widget {
+      position: absolute;
+      left: 28px;
+      bottom: 28px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      z-index: 40;
+    }
+
+    .zoom-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: none;
+      background: transparent;
+      color: #cbd5e1;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .zoom-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    /* ══════════════════════════════════════════════════
+       RICH TRILINGUAL INFO CARD (3 LANGUAGES KZ / RU / EN)
+       ══════════════════════════════════════════════════ */
+    .room-card {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(30px);
+      background: rgba(15, 21, 32, 0.96);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1.5px solid rgba(79, 70, 229, 0.6);
+      border-radius: 20px;
+      padding: 20px 24px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(79, 70, 229, 0.25);
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      z-index: 80;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      opacity: 0;
+      width: 480px;
+      max-width: 90vw;
+    }
+
+    .room-card.show {
+      display: flex;
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .rc-top-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .rc-big-icon {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      background: rgba(79, 70, 229, 0.2);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      color: #818cf8;
+      font-size: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .rc-title-block {
+      flex: 1;
+    }
+
+    .rc-primary-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.25;
+      margin-bottom: 4px;
+    }
+
+    .rc-sub-titles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .rc-lang-tag {
+      background: rgba(255, 255, 255, 0.06);
+      padding: 2px 7px;
+      border-radius: 6px;
+    }
+
+    .rc-close {
+      background: none;
+      border: none;
+      color: #64748b;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 2px 6px;
+      transition: color 0.2s;
+    }
+    .rc-close:hover { color: #fff; }
+
+    /* Trilingual descriptions list */
+    .rc-trilingual-box {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .rc-lang-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 12px;
+      line-height: 1.4;
+      color: #cbd5e1;
+    }
+
+    .rc-flag {
+      font-size: 14px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .rc-details-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 4px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .rc-status-pill {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      padding: 3px 10px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 11px;
+    }
+
+    /* ══════════════════════════════════════════════════
+       BIOMETRIC RADAR SPINNER OVERLAY
+       ══════════════════════════════════════════════════ */
+    .loader-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 14, 22, 0.9);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .loader-overlay.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .radar-spinner-wrap {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .radar-center-core {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #18202c;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .radar-center-core::after {
+      content: '';
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-blue);
+      box-shadow: 0 0 10px #38bdf8;
+      animation: corePulse 1.6s ease-in-out infinite;
+    }
+
+    @keyframes corePulse {
+      0%, 100% { transform: scale(0.8); opacity: 0.6; }
+      50% { transform: scale(1.3); opacity: 1; }
+    }
+
+    .radar-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .ring-inner { transform-origin: 100px 100px; animation: radarSpinCW 4s linear infinite; }
+    .ring-mid1 { transform-origin: 100px 100px; animation: radarSpinCCW 6s linear infinite; }
+    .ring-mid2 { transform-origin: 100px 100px; animation: radarSpinCW 9s linear infinite; }
+    .ring-outer { transform-origin: 100px 100px; animation: radarSpinCCW 12s linear infinite; }
+
+    @keyframes radarSpinCW { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes radarSpinCCW { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+
+    .loader-status-text {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      text-transform: uppercase;
+    }
+  
+    /* ══════════════════════════════════════════════════
+       SMARTATTEND CLEAN LIGHT UNIVERSITY THEME
+       ══════════════════════════════════════════════════ */
+    
+    body.theme-light #map-svg-root polygon,
+    body.theme-light #map-svg-root polyline {
+      fill: #F1F5F9;
+      stroke: #CBD5E1;
+    }
+
+    body.theme-light .map-groups-stairs polygon,
+    body.theme-light .map-groups-stairs polyline {
+      fill: #E2E8F0 !important;
+      stroke: #94A3B8 !important;
+    }
+
+    body.theme-light .map-groups-stairs:hover polygon,
+    body.theme-light .map-groups-stairs:hover polyline {
+      fill: #CBD5E1 !important;
+      stroke: #64748B !important;
+    }
+
+    body.theme-light .map-groups-techs polygon,
+    body.theme-light .map-groups-techs polyline,
+    body.theme-light .map-groups-escapes polygon,
+    body.theme-light .map-groups-escapes polyline,
+    body.theme-light .map-groups-wcs polygon,
+    body.theme-light .map-groups-wcs polyline {
+      fill: #F1F5F9 !important;
+      stroke: #CBD5E1 !important;
+    }
+
+    body.theme-light .map-groups-coworking-atameken path {
+      fill: #F8FAFC !important;
+      stroke: #CBD5E1 !important;
+    }
+
+    /* Suppress void paths entirely in all themes */
+    path[d*="M480.75,470"],
+    path[d*="M710.52,491"],
+    path[d*="M480.75"],
+    .map-groups-void {
+      display: none !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+    }
+
+    body.theme-light {
+      --bg-dark: #F8FAFC;
+      --panel-bg: rgba(255, 255, 255, 0.98);
+      --panel-border: #E2E8F0;
+      --accent-blue: #0062FF;
+      --accent-cyan: #0284C7;
+
+      --color-room-main: #EFF4FF;
+      --color-room-main-hover: #DBEAFE;
+      --color-room-special: #FEF3C7;
+      --color-room-special-hover: #FDE68A;
+      --color-room-service: #F1F5F9;
+      --color-room-tech: #F8FAFC;
+      --color-room-target: #0062FF;
+      --color-map-stroke: #CBD5E1;
+      --color-map-bg: #FFFFFF;
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+    }
+
+    body.theme-light .map-viewport {
+      background: radial-gradient(circle at 50% 50%, #F8FAFC 0%, #EEF2F6 100%) !important;
+    }
+
+    body.theme-light .search-box-wrap {
+      background: #FFFFFF !important;
+      border: 1.5px solid #E2E8F0 !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+    }
+
+    body.theme-light .search-input {
+      color: #0F172A !important;
+    }
+
+    body.theme-light .search-input::placeholder {
+      color: #94A3B8 !important;
+    }
+
+    body.theme-light .scope-select {
+      color: #0F172A !important;
+      border-right: 1px solid #E2E8F0 !important;
+    }
+
+    body.theme-light .scope-select option {
+      background: #FFFFFF !important;
+      color: #0F172A !important;
+    }
+
+    body.theme-light .lang-switcher {
+      background: #F1F5F9 !important;
+      border: 1px solid #E2E8F0 !important;
+    }
+
+    body.theme-light .lang-btn {
+      color: #64748B !important;
+    }
+
+    body.theme-light .lang-btn.active {
+      background: #0062FF !important;
+      color: #FFFFFF !important;
+    }
+
+    body.theme-light .poi-nav-bar {
+      background: rgba(255, 255, 255, 0.95) !important;
+      border-bottom: 1px solid #E2E8F0 !important;
+    }
+
+    body.theme-light .poi-btn {
+      background: #F8FAFC !important;
+      border: 1px solid #E2E8F0 !important;
+      color: #334155 !important;
+    }
+
+    body.theme-light .poi-btn:hover {
+      background: #EFF4FF !important;
+      border-color: #0062FF !important;
+      color: #0062FF !important;
+    }
+
+    body.theme-light .floor-widget,
+    body.theme-light .zoom-widget {
+      background: #FFFFFF !important;
+      border: 1px solid #E2E8F0 !important;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08) !important;
+    }
+
+    body.theme-light .floor-btn {
+      color: #64748B !important;
+    }
+
+    body.theme-light .floor-btn.active {
+      background: #0062FF !important;
+      color: #FFFFFF !important;
+      box-shadow: 0 3px 10px rgba(0,98,255,0.3) !important;
+    }
+
+    body.theme-light .zoom-btn {
+      color: #475569 !important;
+    }
+
+    body.theme-light .zoom-btn:hover {
+      background: #F1F5F9 !important;
+      color: #0062FF !important;
+    }
+
+    body.theme-light .map-label-huge {
+      fill: #CBD5E1 !important;
+    }
+
+    body.theme-light .map-label path {
+      fill: #475569 !important;
+    }
+
+    body.theme-light .map-groups-rooms g path,
+    body.theme-light .map-groups-rooms-vk g path {
+      fill: #0F172A !important;
+      stroke: #0F172A !important;
+      stroke-width: 0.1px !important;
+    }
+
+    body.theme-light .map-groups-rooms g line,
+    body.theme-light .map-groups-rooms g polygon,
+    body.theme-light .map-groups-rooms g polyline,
+    body.theme-light .map-groups-rooms g rect {
+      stroke: #CBD5E1 !important;
+      fill: #EFF4FF !important;
+    }
+
+    body.theme-light .map-groups-rooms g:hover line,
+    body.theme-light .map-groups-rooms g:hover polygon,
+    body.theme-light .map-groups-rooms g:hover polyline,
+    body.theme-light .map-groups-rooms g:hover rect {
+      fill: #DBEAFE !important;
+      filter: drop-shadow(0 2px 8px rgba(0, 98, 255, 0.25)) !important;
+    }
+
+    body.theme-light .room-card {
+      background: #FFFFFF !important;
+      border: 1.5px solid #0062FF !important;
+      box-shadow: 0 16px 40px rgba(0, 98, 255, 0.15), 0 4px 16px rgba(0,0,0,0.06) !important;
+    }
+
+    body.theme-light .rc-primary-title {
+      color: #0F172A !important;
+    }
+
+    body.theme-light .rc-lang-tag {
+      background: #F1F5F9 !important;
+      color: #475569 !important;
+    }
+
+    body.theme-light .rc-trilingual-box {
+      background: #F8FAFC !important;
+      border: 1px solid #E2E8F0 !important;
+    }
+
+    body.theme-light .rc-lang-row {
+      color: #1E293B !important;
+    }
+
+    body.theme-light .rc-details-row {
+      border-top: 1px solid #E2E8F0 !important;
+      color: #64748B !important;
+    }
+
+    body.theme-light .schedule-pill {
+      background: #EFF4FF !important;
+      border: 1px solid #DBEAFE !important;
+      color: #0062FF !important;
+    }
+
+</style>
+</head>
+<body>
+
+  <!-- ── 1. HEADER WITH BRAND, SEARCH & LANGUAGE SWITCHER ── -->
+  <header class="header-bar">
+    <div class="brand-section">
+      <span class="aitu-badge">AITU CAMPUS</span>
+      <div class="brand-text">
+        <h1 id="i18n-title">Astana IT University — Интерактивная Карта</h1>
+        <p id="i18n-subtitle">Блок C1 (C1.1 • C1.2 • C1.3) • 3D навигация</p>
+      </div>
+    </div>
+
+    <div class="center-controls">
+      <div class="search-box-wrap">
+        <select class="scope-select" id="scope-select" onchange="filterBlock(this.value)">
+          <option value="ALL">All</option>
+          <option value="C1.1">C1.1</option>
+          <option value="C1.2">C1.2</option>
+          <option value="C1.3">C1.3</option>
+        </select>
+        <input type="text" class="search-input" id="search-box" placeholder="Асхана, Библиотека, 312, 143, Gym..." onkeydown="if(event.key==='Enter') executeSearch()">
+        <button class="search-icon-btn" onclick="executeSearch()" title="Найти">🔍</button>
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <!-- 🇰🇿 / 🇷🇺 / 🇬🇧 Language Switcher -->
+      <div class="lang-switcher">
+        <button class="lang-btn" data-lang="kz" onclick="setLanguage('kz')">🇰🇿 ҚАЗ</button>
+        <button class="lang-btn active" data-lang="ru" onclick="setLanguage('ru')">🇷🇺 РУС</button>
+        <button class="lang-btn" data-lang="en" onclick="setLanguage('en')">🇬🇧 ENG</button>
+      </div>
+
+      <button class="schedule-pill" onclick="findScheduleLesson()" title="Расписание">
+        📍 <span id="i18n-lesson-pill">Моя пара: Ауд. 312-А (3 эт.)</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── 2. QUICK NAVIGATION BAR (THE 5 KEY USER LOCATIONS) ── -->
+  <nav class="poi-nav-bar">
+    <button class="poi-btn" onclick="openPOI('ASSEMBLY')">
+      <span>🏛️</span> <span id="btn-poi-assembly">Актовый зал</span>
+    </button>
+    <button class="poi-btn" onclick="openPOI('DINING')">
+      <span>🍽️</span> <span id="btn-poi-dining">Столовая (Асхана)</span>
+    </button>
+    <button class="poi-btn" onclick="openPOI('GYM')">
+      <span>🏀</span> <span id="btn-poi-gym">Спортзал (Gym)</span>
+    </button>
+    <button class="poi-btn" onclick="openPOI('LIBRARY')">
+      <span>📚</span> <span id="btn-poi-library">Библиотека</span>
+    </button>
+    <button class="poi-btn poi-med" onclick="openPOI('MEDIKER')">
+      <span>💊</span> <span id="btn-poi-mediker" style="color:#f87171;">Медпункт (143)</span>
+    </button>
+  </nav>
+
+  <!-- ── 3. MAIN MAP VIEWPORT ── -->
+  <main class="map-viewport" id="map-viewport">
+    
+    <div id="map-transform-container">
+      <div id="map-svg-root"></div>
+    </div>
+
+    <!-- Right Vertical Floor Widget -->
+    <div class="floor-widget">
+      <button class="floor-btn" data-floor="3" onclick="switchFloor(3)">3</button>
+      <button class="floor-btn active" data-floor="2" onclick="switchFloor(2)">2</button>
+      <button class="floor-btn" data-floor="1" onclick="switchFloor(1)">1</button>
+    </div>
+
+    <!-- Zoom & Reset Widget -->
+    <div class="zoom-widget">
+      <button class="zoom-btn" onclick="zoomIn()" title="Приблизить">+</button>
+      <button class="zoom-btn" onclick="resetZoom()" title="По центру" style="font-size:14px;">🎯</button>
+      <button class="zoom-btn" onclick="zoomOut()" title="Отдалить">−</button>
+    </div>
+
+    <!-- ── TRILINGUAL ROOM INFO CARD ── -->
+    <div class="room-card" id="room-card">
+      <div class="rc-top-row">
+        <div class="rc-big-icon" id="rc-icon">🏛️</div>
+        <div class="rc-title-block">
+          <div class="rc-primary-title" id="rc-title-main">Актовый зал</div>
+          <div class="rc-sub-titles" id="rc-title-subs">
+            <span class="rc-lang-tag" id="rc-sub-1">🇰🇿 Акт залы</span>
+            <span class="rc-lang-tag" id="rc-sub-2">🇬🇧 Assembly Hall</span>
+          </div>
+        </div>
+        <button class="rc-close" onclick="closeRoomCard()">✕</button>
+      </div>
+
+      <!-- Trilingual descriptions -->
+      <div class="rc-trilingual-box" id="rc-trilingual-box">
+        <div class="rc-lang-row">
+          <span class="rc-flag">🇰🇿</span>
+          <span id="rc-desc-kz">Студенттік шаралар, салтанатты жиындар және конференциялар</span>
+        </div>
+        <div class="rc-lang-row">
+          <span class="rc-flag">🇷🇺</span>
+          <span id="rc-desc-ru">Студенческие мероприятия, торжественные собрания и конференции</span>
+        </div>
+        <div class="rc-lang-row">
+          <span class="rc-flag">🇬🇧</span>
+          <span id="rc-desc-en">Main auditorium for ceremonies, conferences, and student events</span>
+        </div>
+      </div>
+
+      <div class="rc-details-row">
+        <span id="rc-location-text">📍 1-й этаж • Блок C1.1</span>
+        <span class="rc-status-pill" id="rc-status-tag">🟢 Ашық / Открыто / Open</span>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── 4. BIOMETRIC RADAR LOADER (PHOTO 2) ── -->
+  <div class="loader-overlay" id="loader-overlay">
+    <div class="radar-spinner-wrap">
+      <div class="radar-center-core"></div>
+      <svg class="radar-svg" viewBox="0 0 200 200">
+        <g class="ring-inner">
+          <circle cx="100" cy="100" r="32" fill="none" stroke="#1E293B" stroke-width="5" stroke-linecap="round" stroke-dasharray="14 10 20 8 16 12"/>
+          <circle cx="100" cy="100" r="32" fill="none" stroke="#38BDF8" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 48 18 100"/>
+        </g>
+        <g class="ring-mid1">
+          <circle cx="100" cy="100" r="50" fill="none" stroke="#1E293B" stroke-width="5.5" stroke-linecap="round" stroke-dasharray="24 14 36 12 18 10"/>
+          <circle cx="100" cy="100" r="50" fill="none" stroke="#4F46E5" stroke-width="5.5" stroke-linecap="round" stroke-dasharray="0 80 26 120"/>
+          <circle cx="100" cy="100" r="50" fill="none" stroke="#38BDF8" stroke-width="5.5" stroke-linecap="round" stroke-dasharray="12 140 16 100"/>
+        </g>
+        <g class="ring-mid2">
+          <circle cx="100" cy="100" r="68" fill="none" stroke="#1E293B" stroke-width="6" stroke-linecap="round" stroke-dasharray="32 18 48 16 28 14"/>
+          <circle cx="100" cy="100" r="68" fill="none" stroke="#38BDF8" stroke-width="6" stroke-linecap="round" stroke-dasharray="0 110 32 160"/>
+          <circle cx="100" cy="100" r="68" fill="none" stroke="#0284C7" stroke-width="6" stroke-linecap="round" stroke-dasharray="20 200 18 100"/>
+        </g>
+        <g class="ring-outer">
+          <circle cx="100" cy="100" r="86" fill="none" stroke="#1E293B" stroke-width="6.5" stroke-linecap="round" stroke-dasharray="40 22 55 18 34 20"/>
+          <circle cx="100" cy="100" r="86" fill="none" stroke="#38BDF8" stroke-width="6.5" stroke-linecap="round" stroke-dasharray="0 140 40 200"/>
+          <circle cx="100" cy="100" r="86" fill="none" stroke="#4F46E5" stroke-width="6.5" stroke-linecap="round" stroke-dasharray="22 260 25 150"/>
+        </g>
+      </svg>
+    </div>
+    <div class="loader-status-text" id="loader-status">Синхронизация карты...</div>
+  </div>
+
+  <!-- Load Vector Floor Data -->
+  <script src="aitu_floors_data.js"></script>
+
+  <script>
+    'use strict';
+
+    let currentLang = 'ru';
+    let currentFloor = 2;
+    let scale = 1.0;
+    let panX = 0, panY = 0;
+    let isPanning = false;
+    let startX = 0, startY = 0;
+    let activeTargetRoomEl = null;
+
+    // ══════════════════════════════════════════════════
+    // TRILINGUAL DATA FOR THE 5 LOCATIONS & POIs
+    // ══════════════════════════════════════════════════
+        const POI_DATA = {
+      ASSEMBLY: {
+        key: 'ASSEMBLY',
+        icon: '🏛️',
+        floor: 1,
+        selector: '#ZONE_ASSEMBLYHALL, [data-name*="ASSEMBLY"], .assembly-zone-f2',
+        center: { x: 385, y: -130, scale: 1.45 },
+        kz: {
+          name: 'Акт залы',
+          tag: 'Салтанатты зал',
+          location: '1-қабат • Блок C1.1',
+          desc: 'Университеттің басты салтанатты залы: ресми жиындар, халықаралық конференциялар, қонақ дәрістері мен мәдени шаралар (400 орындық).',
+          hours: 'Дс - Жм • 08:30 – 19:00',
+          status: 'Ашық'
+        },
+        ru: {
+          name: 'Актовый зал',
+          tag: 'Assembly Hall',
+          location: '1-й этаж • Блок C1.1',
+          desc: 'Главный университетский зал: торжественные собрания, международные конференции, гостевые лекции и студенческие фестивали (400 мест).',
+          hours: 'Пн - Пт • 08:30 – 19:00',
+          status: 'Открыто'
+        },
+        en: {
+          name: 'Assembly Hall',
+          tag: 'Main Auditorium',
+          location: 'Floor 1 • Block C1.1',
+          desc: 'Main campus auditorium for graduation ceremonies, academic conferences, guest lectures, and student community events (400 seats).',
+          hours: 'Mon - Fri • 08:30 AM – 07:00 PM',
+          status: 'Open'
+        }
+      },
+      DINING: {
+        key: 'DINING',
+        icon: '🍽️',
+        floor: 1,
+        selector: '#ZONE_DININGHALL, [id*="DINING"], [data-name*="DINING"]',
+        center: { x: -515, y: -160, scale: 1.45 },
+        kz: {
+          name: 'Асхана (Студенттер асханасы)',
+          tag: 'Тамақтану орталығы',
+          location: '1-қабат • Блок C1.3',
+          desc: 'Студенттер мен оқытушыларға арналған ыстық кешенді түскі астар, жаңа піскен нан-тоқаштар, дәмді кофе және салқын сусындар.',
+          hours: 'Дс - Сб • 08:00 – 18:30',
+          status: 'Ашық'
+        },
+        ru: {
+          name: 'Столовая (Асхана)',
+          tag: 'Dining Hall / Canteen',
+          location: '1-й этаж • Блок C1.3',
+          desc: 'Университетский комплекс питания: горячие первые и вторые блюда, свежая выпечка, европейское и азиатское меню, свежесваренный кофе.',
+          hours: 'Пн - Сб • 08:00 – 18:30',
+          status: 'Открыто'
+        },
+        en: {
+          name: 'Dining Hall (Canteen)',
+          tag: 'Campus Food Court',
+          location: 'Floor 1 • Block C1.3',
+          desc: 'Campus cafeteria serving hearty hot meals, freshly baked pastries, European & Asian dishes, healthy snacks, and premium barista coffee.',
+          hours: 'Mon - Sat • 08:00 AM – 06:30 PM',
+          status: 'Open'
+        }
+      },
+      GYM: {
+        key: 'GYM',
+        icon: '🏀',
+        floor: 1,
+        selector: '#ZONE_GYM, .map-groups-gym',
+        center: { x: -330, y: -115, scale: 1.45 },
+        kz: {
+          name: 'Спорт залы (Спорт кешені)',
+          tag: 'Спорттық арена',
+          location: '1-қабат • Блок C1.3',
+          desc: 'Көпфункционалды спорт залы: баскетбол, волейбол, футзал секциялары, жаттығу жабдықтары және дене шынықтыру сабақтары.',
+          hours: 'Дс - Сб • 08:00 – 21:00',
+          status: 'Ашық'
+        },
+        ru: {
+          name: 'Спортивный зал (Gym)',
+          tag: 'Спортивный комплекс',
+          location: '1-й этаж • Блок C1.3',
+          desc: 'Многофункциональный спорткомплекс с паркетной разметкой: баскетбол, волейбол, мини-футбол, секции единоборств и фитнеса.',
+          hours: 'Пн - Сб • 08:00 – 21:00',
+          status: 'Открыто'
+        },
+        en: {
+          name: 'Sports Hall / Gym',
+          tag: 'Athletics Center',
+          location: 'Floor 1 • Block C1.3',
+          desc: 'Full-size athletics facility with professional court flooring: basketball, volleyball, futsal, student sport leagues, and fitness workouts.',
+          hours: 'Mon - Sat • 08:00 AM – 09:00 PM',
+          status: 'Open'
+        }
+      },
+      LIBRARY: {
+        key: 'LIBRARY',
+        icon: '📚',
+        floor: 1,
+        selector: '#ZONE_LIBRARY, [data-name*="LIBRARY"]',
+        center: { x: 560, y: -100, scale: 1.40 },
+        kz: {
+          name: 'Кітапхана (Медиатека)',
+          tag: 'Ғылыми орталық',
+          location: '1-қабат • Блок C1.1',
+          desc: 'Заманауи IT-әдебиеттер, халықаралық ғылыми басылымдар қоры, жеке тыныш оқу орындары, коворкинг және онлайн репозиторийлер.',
+          hours: 'Дс - Сб • 08:30 – 21:00',
+          status: 'Ашық'
+        },
+        ru: {
+          name: 'Библиотека (Медиатека)',
+          tag: 'Library & Media Center',
+          location: '1-й этаж • Блок C1.1',
+          desc: 'Обширный фонд современной IT и профильной литературы, электронные научные базы (IEEE, Scopus), тихие зоны для учебы и коворкинг (200 мест).',
+          hours: 'Пн - Сб • 08:30 – 21:00',
+          status: 'Открыто'
+        },
+        en: {
+          name: 'University Library',
+          tag: 'Digital Learning Center',
+          location: 'Floor 1 • Block C1.1',
+          desc: 'Modern library with IT textbooks, IEEE/Scopus digital access, silent study areas, research media zones, and academic coworking (200 seats).',
+          hours: 'Mon - Sat • 08:30 AM – 09:00 PM',
+          status: 'Open'
+        }
+      },
+      MEDIKER: {
+        key: 'MEDIKER',
+        icon: '💊',
+        floor: 1,
+        selector: '#ZONE_MEDIKER, [data-name*="MEDIKER"]',
+        center: { x: 365, y: 138, scale: 1.75 },
+        kz: {
+          name: 'Медициналық пункт (Медпункт)',
+          tag: 'Дәрігерлік көмек',
+          location: '1-қабат • Блок C1.1 (143 ауд. жанында)',
+          desc: 'Шұғыл алғашқы медициналық көмек, білікті дәрігер қабылдауы, денсаулықты тексеру, дәрі-дәрмектермен қамтамасыз ету және анықтама беру.',
+          hours: 'Дс - Жм • 08:30 – 17:30',
+          status: 'Ашық'
+        },
+        ru: {
+          name: 'Медицинский пункт (Медпункт)',
+          tag: 'Медицинский центр (143)',
+          location: '1-й этаж • Блок C1.1 (рядом с 143 ауд.)',
+          desc: 'Первичная доврачебная и врачебная помощь: прием терапевта, экспресс-диагностика, выдача лекарств, обработка травм и оформление справок.',
+          hours: 'Пн - Пт • 08:30 – 17:30',
+          status: 'Открыто'
+        },
+        en: {
+          name: 'Medical Center / First Aid',
+          tag: 'Health Care Clinic (143)',
+          location: 'Floor 1 • Block C1.1 (next to Room 143)',
+          desc: 'On-campus health center: emergency first aid, physician appointments, vital checks, prescription medication, and medical leave certificates.',
+          hours: 'Mon - Fri • 08:30 AM – 05:30 PM',
+          status: 'Open'
+        }
+      }
+    };
+
+    // ══════════════════════════════════════════════════
+    // LANGUAGE SWITCHER ENGINE
+    // ══════════════════════════════════════════════════
+    const UI_I18N = {
+      kz: {
+        title: "Astana IT University — Интерактивті Картасы",
+        subtitle: "C1 блогы (C1.1 • C1.2 • C1.3) • 3D навигация",
+        searchPlaceholder: "Асхана, Кітапхана, Медпункт, 312, 143...",
+        lessonPill: "Менің сабағым: Ауд. 312-А (3 қ.)",
+        btnAssembly: "Акт залы",
+        btnDining: "Асхана",
+        btnGym: "Спортзал",
+        btnLibrary: "Кітапхана",
+        btnMediker: "Медпункт (143)"
+      },
+      ru: {
+        title: "Astana IT University — Интерактивная Карта",
+        subtitle: "Блок C1 (C1.1 • C1.2 • C1.3) • 3D навигация",
+        searchPlaceholder: "Асхана, Столовая, Библиотека, Медпункт, 312...",
+        lessonPill: "Моя пара: Ауд. 312-А (3 эт.)",
+        btnAssembly: "Актовый зал",
+        btnDining: "Столовая (Асхана)",
+        btnGym: "Спортзал (Gym)",
+        btnLibrary: "Библиотека",
+        btnMediker: "Медпункт (143)"
+      },
+      en: {
+        title: "Astana IT University — Interactive Campus Map",
+        subtitle: "Block C1 (C1.1 • C1.2 • C1.3) • 3D Navigation",
+        searchPlaceholder: "Dining Hall, Library, First Aid, 312, Gym...",
+        lessonPill: "My Class: Room 312-A (3rd fl.)",
+        btnAssembly: "Assembly Hall",
+        btnDining: "Dining Hall",
+        btnGym: "Sports Gym",
+        btnLibrary: "Library",
+        btnMediker: "Medical Center"
+      }
+    };
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.lang === lang);
+      });
+
+      const t = UI_I18N[lang];
+      document.getElementById('i18n-title').textContent = t.title;
+      document.getElementById('i18n-subtitle').textContent = t.subtitle;
+      document.getElementById('search-box').placeholder = t.searchPlaceholder;
+      document.getElementById('i18n-lesson-pill').textContent = t.lessonPill;
+
+      document.getElementById('btn-poi-assembly').textContent = t.btnAssembly;
+      document.getElementById('btn-poi-dining').textContent = t.btnDining;
+      document.getElementById('btn-poi-gym').textContent = t.btnGym;
+      document.getElementById('btn-poi-library').textContent = t.btnLibrary;
+      document.getElementById('btn-poi-mediker').textContent = t.btnMediker;
+    }
+
+    // ══════════════════════════════════════════════════
+    // OPEN TRILINGUAL POI CARD (FOR THE 5 LOCATIONS)
+    // ══════════════════════════════════════════════════
+    function openPOI(poiKey) {
+      const poi = POI_DATA[poiKey];
+      if (!poi) return;
+
+      const action = () => {
+        // Find target SVG element
+        const target = document.querySelector(poi.selector);
+        if (target) {
+          if (activeTargetRoomEl) activeTargetRoomEl.classList.remove('room-map-group-search-target');
+          activeTargetRoomEl = target;
+          target.classList.add('room-map-group-search-target');
+        }
+
+        // Center on target
+        panX = poi.center.x;
+        panY = poi.center.y;
+        scale = poi.center.scale;
+        updateTransform();
+
+        // Populate trilingual card
+        showTrilingualCard(poi);
+      };
+
+      if (currentFloor !== poi.floor) {
+        switchFloor(poi.floor, action);
+      } else {
+        action();
+      }
+    }
+
+    function showTrilingualCard(poi) {
+      const card = document.getElementById('room-card');
+      document.getElementById('rc-icon').textContent = poi.icon;
+
+      // Primary title in current language
+      const curr = poi[currentLang] || poi.ru;
+      document.getElementById('rc-title-main').textContent = curr.name;
+
+      // Other 2 languages in sub-tags
+      const subContainer = document.getElementById('rc-title-subs');
+      subContainer.innerHTML = '';
+      ['kz', 'ru', 'en'].forEach(l => {
+        if (l !== currentLang) {
+          const flag = l === 'kz' ? '🇰🇿' : (l === 'ru' ? '🇷🇺' : '🇬🇧');
+          const span = document.createElement('span');
+          span.className = 'rc-lang-tag';
+          span.textContent = `${flag} ${poi[l].name}`;
+          subContainer.appendChild(span);
+        }
+      });
+
+      // Trilingual descriptions
+      document.getElementById('rc-desc-kz').textContent = poi.kz.desc;
+      document.getElementById('rc-desc-ru').textContent = poi.ru.desc;
+      document.getElementById('rc-desc-en').textContent = poi.en.desc;
+
+      // Location & status
+      document.getElementById('rc-location-text').textContent = '📍 ' + curr.location;
+      document.getElementById('rc-status-tag').textContent = '🟢 ' + curr.status;
+
+      card.classList.add('show');
+    }
+
+    // ══════════════════════════════════════════════════
+    // GENERAL CLASSROOM CARD WITH LIVE ATTENDANCE (DEAN & CURATOR & STUDENT)
+    // ══════════════════════════════════════════════════
+    async function showClassroomCard(cleanName, block) {
+      const card = document.getElementById('room-card');
+      document.getElementById('rc-icon').textContent = '📚';
+      document.getElementById('rc-title-main').textContent = `Аудитория ${cleanName}`;
+      document.getElementById('rc-title-subs').innerHTML = `<span class="rc-lang-tag">⏳ Серверден мәліметтер жүктелуде...</span>`;
+      document.getElementById('rc-status-tag').textContent = '⏳ Тексерілуде...';
+      card.classList.add('show');
+
+      try {
+        const res = await fetch('/api/rooms/' + encodeURIComponent(cleanName) + '/live-details');
+        const data = await res.json();
+        if (data.success && data.is_busy) {
+          document.getElementById('rc-icon').textContent = '🔴';
+          document.getElementById('rc-title-main').textContent = `Ауд. ${data.room_code}: ${data.lesson_title}`;
+          
+          const subContainer = document.getElementById('rc-title-subs');
+          subContainer.innerHTML = `
+            <span class="rc-lang-tag" style="background:#0062FF;color:#fff;">👥 Топ: ${data.group_name}</span>
+            <span class="rc-lang-tag" style="background:#10B981;color:#fff;">👨‍🏫 Оқытушы: ${data.teacher_name}</span>
+            <span class="rc-lang-tag" style="background:#F59E0B;color:#fff;">⏰ ${data.time}</span>
+          `;
+
+          const lateStr = data.late_students.length > 0 
+            ? data.late_students.map(s => `<span style="display:inline-block;background:#FEE2E2;color:#DC2626;padding:2px 8px;border-radius:4px;margin:2px 0;">⚠️ <b>${s.name}</b> (+${s.delay} мин кешікті)</span>`).join('<br/>') 
+            : '<span style="color:#10B981;">Барлық студент сабаққа уақытында келді ✓</span>';
+          
+          const absentStr = data.absent_students.length > 0 
+            ? data.absent_students.map(s => `<span style="display:inline-block;background:#F1F5F9;color:#64748B;padding:2px 8px;border-radius:4px;margin:2px 0;">❌ ${s} (НБ)</span>`).join(', ') 
+            : '<span style="color:#10B981;">Келмегендер жоқ ✓</span>';
+
+          const excusedStr = data.excused_notes.length > 0
+            ? data.excused_notes.map(n => `<div style="background:#DCFCE7;color:#16A34A;padding:4px 8px;border-radius:6px;margin-top:4px;"><b>🛡️ ${n.student_name}:</b> "${n.reason}" <br/><span style="font-size:10px;color:#059669;">[ҚР ҰКО ЭЦП-мен расталған • ЖСН: ${n.signer_iin || '750412300184'}]</span></div>`).join('')
+            : '';
+
+          const liveReportHtml = `
+            <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.14);border-radius:12px;padding:12px;margin-top:8px;font-size:12px;text-align:left;color:#F8FAFC;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <span style="font-weight:800;color:#38BDF8;font-size:13px;">📊 Нақты уақыттағы сабақ және қатысу:</span>
+                <span style="background:#10B981;color:#fff;padding:2px 8px;border-radius:10px;font-weight:800;font-size:11px;">${data.present_count} / ${data.total_students} қатысты</span>
+              </div>
+              <div style="margin-bottom:6px;"><b>👨‍🏫 Дәріс оқушы:</b> ${data.teacher_name}</div>
+              <div style="margin-bottom:6px;"><b>👥 Академиялық топ:</b> ${data.group_name} (2 курс)</div>
+              <div style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.08);padding-top:6px;">
+                <b style="color:#F87171;">⚠️ Кешіккендер тізімі (Деканат бақылауында):</b><br/>${lateStr}
+              </div>
+              <div style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.08);padding-top:6px;">
+                <b style="color:#94A3B8;">❌ Келмегендер (Себепсіз НБ):</b><br/>${absentStr}
+              </div>
+              ${excusedStr ? `
+              <div style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.08);padding-top:6px;">
+                <b style="color:#34D399;">📜 Ата-ана қолхаты (ЭЦП расталған):</b>${excusedStr}
+              </div>` : ''}
+            </div>
+          `;
+
+          document.getElementById('rc-desc-kz').innerHTML = liveReportHtml;
+          document.getElementById('rc-desc-ru').innerHTML = liveReportHtml;
+          document.getElementById('rc-desc-en').innerHTML = liveReportHtml;
+
+          document.getElementById('rc-location-text').textContent = `📍 ${currentFloor}-қабат • Блок ${block} • Сабақ жүріп жатыр`;
+          document.getElementById('rc-status-tag').textContent = '🔴 САБАҚ БАР (LIVE)';
+          return;
+        }
+      } catch(e) {
+        console.error("Room fetch error:", e);
+      }
+
+      // Свободная аудитория
+      document.getElementById('rc-icon').textContent = '📍';
+      document.getElementById('rc-title-main').textContent = `Аудитория ${cleanName}`;
+      document.getElementById('rc-title-subs').innerHTML = `
+        <span class="rc-lang-tag">🇰🇿 ${cleanName} дәрісханасы</span>
+        <span class="rc-lang-tag">🇬🇧 Room ${cleanName}</span>
+      `;
+      document.getElementById('rc-desc-kz').textContent = `Оқу аудиториясы • ${currentFloor}-қабат • ${block} блогы • Қазір аудитория бос`;
+      document.getElementById('rc-desc-ru').textContent = `Учебная аудитория • ${currentFloor}-й этаж • Блок ${block} • Сейчас свободно`;
+      document.getElementById('rc-desc-en').textContent = `Academic room • Floor ${currentFloor} • Block ${block} • Available`;
+      document.getElementById('rc-location-text').textContent = `📍 ${currentFloor}-й этаж • Блок ${block}`;
+      document.getElementById('rc-status-tag').textContent = '🟢 Бос / Свободно';
+    }
+
+    function closeRoomCard() {
+      document.getElementById('room-card').classList.remove('show');
+      if (activeTargetRoomEl) {
+        activeTargetRoomEl.classList.remove('room-map-group-search-target');
+        activeTargetRoomEl = null;
+      }
+    }
+
+    // ══════════════════════════════════════════════════
+    // RENDER VECTOR FLOOR
+    // ══════════════════════════════════════════════════
+    function renderFloor(floorNum) {
+      if (!window.AITU_FLOORS) return;
+
+      const root = document.getElementById('map-svg-root');
+      const svgCode = window.AITU_FLOORS[`floor${floorNum}`];
+      if (!svgCode) return;
+
+      root.innerHTML = svgCode;
+
+      const svgEl = root.querySelector('svg');
+      if (svgEl) {
+        svgEl.setAttribute('width', '100%');
+        svgEl.setAttribute('height', '100%');
+        svgEl.removeAttribute('style');
+      }
+
+      
+      attachRoomEventListeners();
+      highlightActiveRoomsOnMap();
+    
+    }
+
+    function attachRoomEventListeners() {
+      const elements = document.querySelectorAll('#map-svg-root g[id], #map-svg-root g[data-name], #map-svg-root .map-groups-gym, #map-svg-root .map-groups-stairs');
+      elements.forEach(el => {
+        const id = el.getAttribute('id') || '';
+        const name = (el.getAttribute('data-name') || id).toUpperCase();
+
+        if (['WALLPAPER', 'FIRST_FLOOR', 'SECOND_FLOOR', 'THIRD_FLOOR', 'ICONS_COMMON', 'C1.1', 'C1.2', 'C1.3'].includes(id)) {
+          return;
+        }
+
+        el.style.cursor = 'pointer';
+        el.addEventListener('click', (e) => {
+          // Check if clicked element is stairs
+          if (el.classList.contains('map-groups-stairs') || el.closest('.map-groups-stairs')) {
+            const card = document.getElementById('room-card');
+            document.getElementById('rc-icon').textContent = '🪜';
+            document.getElementById('rc-title-main').textContent = currentLang === 'kz' ? 'Баспалдақ (Лестница)' : (currentLang === 'en' ? 'Staircase' : 'Лестничный пролёт');
+            document.getElementById('rc-title-subs').innerHTML = `
+              <span class="rc-lang-tag">🇰🇿 Баспалдақ</span>
+              <span class="rc-lang-tag">🇷🇺 Лестница</span>
+              <span class="rc-lang-tag">🇬🇧 Staircase</span>
+            `;
+            document.getElementById('rc-desc-kz').textContent = 'Қабаттар арасындағы жаяу баспалдақ өткелі (1-3 қабаттар)';
+            document.getElementById('rc-desc-ru').textContent = 'Пешеходный лестничный переход между этажами кампуса (1-3 этажи)';
+            document.getElementById('rc-desc-en').textContent = 'Pedestrian inter-floor staircase connecting Floors 1-3';
+            document.getElementById('rc-location-text').textContent = '📍 ' + currentFloor + '-й этаж';
+            document.getElementById('rc-status-tag').textContent = '🟢 Ашық / Открыто / Open';
+            card.classList.add('show');
+            return;
+          }
+
+          e.stopPropagation();
+
+          // 1. Check if it's one of the 5 key POIs
+          if (id === 'ZONE_ASSEMBLYHALL' || name.includes('ASSEMBLY')) {
+            openPOI('ASSEMBLY');
+            return;
+          }
+          if (id === 'ZONE_DININGHALL' || name.includes('DINING')) {
+            openPOI('DINING');
+            return;
+          }
+          if (id === 'ZONE_LIBRARY' || name.includes('LIBRARY') || name.includes('KITAPHANA')) {
+            openPOI('LIBRARY');
+            return;
+          }
+          if (id === 'ZONE_MEDIKER' || name.includes('MEDIKER')) {
+            openPOI('MEDIKER');
+            return;
+          }
+          if (id === 'ZONE_GYM' || el.classList.contains('map-groups-gym')) {
+            openPOI('GYM');
+            return;
+          }
+
+          // 2. Regular Classroom
+          if (activeTargetRoomEl) activeTargetRoomEl.classList.remove('room-map-group-search-target');
+          activeTargetRoomEl = el;
+          el.classList.add('room-map-group-search-target');
+
+          let block = "C1.2";
+          if (name.includes("1.1") || name.startsWith("C1.1")) block = "C1.1";
+          if (name.includes("1.3") || name.startsWith("C1.3")) block = "C1.3";
+
+          let cleanName = el.getAttribute('data-name') || id;
+          if (cleanName.includes('|')) cleanName = cleanName.split('|')[1] || cleanName.split('|')[0];
+
+          showClassroomCard(cleanName, block);
+        });
+      });
+    }
+
+    // ══════════════════════════════════════════════════
+    // FLOOR SWITCHER WITH RADAR LOADER
+    // ══════════════════════════════════════════════════
+    function switchFloor(floorNum, onComplete = null) {
+      if (floorNum === currentFloor) {
+        if (onComplete) onComplete();
+        return;
+      }
+
+      const msg = currentLang === 'kz' ? `${floorNum}-қабатқа өту...` : (currentLang === 'en' ? `Switching to Floor ${floorNum}...` : `Переход на ${floorNum}-й этаж...`);
+      triggerLoaderDemo(msg, () => {
+        currentFloor = floorNum;
+        document.querySelectorAll('.floor-btn').forEach(btn => {
+          btn.classList.toggle('active', parseInt(btn.dataset.floor) === floorNum);
+        });
+        renderFloor(floorNum);
+        closeRoomCard();
+        if (onComplete) onComplete();
+      });
+    }
+
+    function triggerLoaderDemo(text = "Загрузка...", onFinish = null) {
+      if (window.showLoader) {
+        window.showLoader(currentLang, text);
+        setTimeout(() => {
+          if (window.hideLoader) window.hideLoader();
+          if (onFinish) onFinish();
+        }, 280);
+        return;
+      }
+      const overlay = document.getElementById('loader-overlay');
+      const status = document.getElementById('loader-status');
+      if (status) status.textContent = text;
+      if (overlay) overlay.classList.add('active');
+
+      setTimeout(() => {
+        if (overlay) overlay.classList.remove('active');
+        if (onFinish) onFinish();
+      }, 300);
+    }
+
+    // ══════════════════════════════════════════════════
+    // SCHEDULE HIGHLIGHT (ROOM 312-A)
+    // ══════════════════════════════════════════════════
+    function findScheduleLesson() {
+      if (window.showLoader) window.showLoader(currentLang);
+      switchFloor(3, () => {
+        const query = '312';
+        const target = Array.from(document.querySelectorAll('#map-svg-root g[id]')).find(el => {
+          const id = el.getAttribute('id') || '';
+          const name = el.getAttribute('data-name') || '';
+          return id.includes(query) || name.includes(query);
+        });
+
+        if (target) {
+          if (activeTargetRoomEl) activeTargetRoomEl.classList.remove('room-map-group-search-target');
+          activeTargetRoomEl = target;
+          target.classList.add('room-map-group-search-target');
+
+          panX = 0; panY = 20; scale = 1.4;
+          updateTransform();
+
+          const card = document.getElementById('room-card');
+          document.getElementById('rc-icon').textContent = '📍';
+          document.getElementById('rc-title-main').textContent = 'Аудитория 312-А (C1.2.312-A)';
+          document.getElementById('rc-title-subs').innerHTML = `
+            <span class="rc-lang-tag">🇰🇿 312-А аудиториясы</span>
+            <span class="rc-lang-tag">🇬🇧 Room 312-A</span>
+          `;
+          document.getElementById('rc-desc-kz').textContent = '🔵 Сабақ: Алгоритмдер мен деректер құрылымы (09:00 - 10:30) • Қатысу белгіленді';
+          document.getElementById('rc-desc-ru').textContent = '🔵 Занятие: Алгоритмы и структуры данных (09:00 - 10:30) • Отмечен через QR';
+          document.getElementById('rc-desc-en').textContent = '🔵 Lesson: Algorithms & Data Structures (09:00 - 10:30) • Attendance Verified';
+          document.getElementById('rc-location-text').textContent = '📍 3-й этаж • Блок C1.2';
+          document.getElementById('rc-status-tag').textContent = '🔵 SmartAttend QR Verified';
+          card.classList.add('show');
+        }
+      });
+    }
+
+    // ══════════════════════════════════════════════════
+    // SEARCH & FILTER
+    // ══════════════════════════════════════════════════
+    function executeSearch() {
+      const q = document.getElementById('search-box').value.trim().toUpperCase();
+      if (!q) return;
+
+      // Trilingual search shortcuts for 5 key locations
+      if (['АКТ', 'ASSEMBLY', 'АКТОВЫЙ'].some(k => q.includes(k))) {
+        openPOI('ASSEMBLY');
+        return;
+      }
+      if (['АСХАНА', 'СТОЛОВАЯ', 'DINING', 'CANTEEN', 'ЕДА', 'ТАМАҚ'].some(k => q.includes(k))) {
+        openPOI('DINING');
+        return;
+      }
+      if (['СПОРТ', 'GYM', 'СПОРТЗАЛ', 'БАСКЕТБОЛ'].some(k => q.includes(k))) {
+        openPOI('GYM');
+        return;
+      }
+      if (['КІТАПХАНА', 'БИБЛИОТЕКА', 'LIBRARY', 'КНИГИ', 'КІТАП'].some(k => q.includes(k))) {
+        openPOI('LIBRARY');
+        return;
+      }
+      if (['МЕД', 'МЕДПУНКТ', 'ДӘРІГЕР', 'MEDICAL', 'ДОКТОР', 'ВРАЧ', '143'].some(k => q.includes(k))) {
+        openPOI('MEDIKER');
+        return;
+      }
+
+      // Detect floor for classrooms
+      let targetFloor = currentFloor;
+      if (q.startsWith('3') || q.includes('.3') || q.includes('3.')) targetFloor = 3;
+      else if (q.startsWith('2') || q.includes('.2') || q.includes('2.')) targetFloor = 2;
+      else if (q.startsWith('1')) targetFloor = 1;
+
+      switchFloor(targetFloor, () => {
+        const target = Array.from(document.querySelectorAll('#map-svg-root g[id]')).find(el => {
+          const id = (el.getAttribute('id') || '').toUpperCase();
+          const name = (el.getAttribute('data-name') || '').toUpperCase();
+          return id.includes(q) || name.includes(q);
+        });
+
+        if (target) {
+          if (activeTargetRoomEl) activeTargetRoomEl.classList.remove('room-map-group-search-target');
+          activeTargetRoomEl = target;
+          target.classList.add('room-map-group-search-target');
+
+          try {
+            const bbox = target.getBBox();
+            panX = -(bbox.x + bbox.width / 2 - 462);
+            panY = -(bbox.y + bbox.height / 2 - 198);
+            scale = 1.45;
+            updateTransform();
+          } catch(e) {}
+
+          const name = target.getAttribute('data-name') || target.getAttribute('id');
+          showClassroomCard(name, "C1.2");
+        } else {
+          alert(currentLang === 'kz' ? 'Аудитория табылмады' : (currentLang === 'en' ? 'Room not found' : 'Аудитория не найдена'));
+        }
+      });
+    }
+
+    function filterBlock(block) {
+      if (block === 'ALL') {
+        panX = 0; panY = 0; scale = 1.0;
+      } else if (block === 'C1.1') {
+        panX = 350; panY = -30; scale = 1.35;
+      } else if (block === 'C1.2') {
+        panX = 0; panY = 40; scale = 1.35;
+      } else if (block === 'C1.3') {
+        panX = -350; panY = -30; scale = 1.35;
+      }
+      updateTransform();
+    }
+
+    // ══════════════════════════════════════════════════
+    // ZOOM & PAN ENGINE
+    // ══════════════════════════════════════════════════
+    const container = document.getElementById('map-transform-container');
+    const viewport = document.getElementById('map-viewport');
+
+    function updateTransform() {
+      container.style.transform = `translate(calc(-50% + ${panX}px), calc(-50% + ${panY}px)) scale(${scale})`;
+    }
+
+    function zoomIn() {
+      scale = Math.min(scale * 1.25, 4.0);
+      updateTransform();
+    }
+
+    function zoomOut() {
+      scale = Math.max(scale / 1.25, 0.6);
+      updateTransform();
+    }
+
+    function resetZoom() {
+      scale = 1.0; panX = 0; panY = 0;
+      updateTransform();
+      document.getElementById('scope-select').value = 'ALL';
+    }
+
+    viewport.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 1.15 : 0.88;
+      scale = Math.min(Math.max(scale * delta, 0.5), 4.5);
+      updateTransform();
+    }, { passive: false });
+
+    viewport.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.floor-widget') || e.target.closest('.zoom-widget') || e.target.closest('.room-card')) return;
+      isPanning = true;
+      startX = e.clientX - panX;
+      startY = e.clientY - panY;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isPanning) return;
+      panX = e.clientX - startX;
+      panY = e.clientY - startY;
+      updateTransform();
+    });
+
+    window.addEventListener('mouseup', () => { isPanning = false; });
+
+        // Initial load on Floor 1 to showcase POIs!
+    document.addEventListener('DOMContentLoaded', () => {
+      renderFloor(1);
+      currentFloor = 1;
+      document.querySelectorAll('.floor-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.floor) === 1);
+      });
+      updateTransform();
+
+      // Query param support (?poi=assembly or ?lang=kz)
+      const params = new URLSearchParams(window.location.search);
+      const th = params.get('theme');
+      if (th === 'light' || !th) { // Default to SmartAttend's clean light theme!
+        document.body.classList.add('theme-light');
+      } else if (th === 'dark') {
+        document.body.classList.remove('theme-light');
+      }
+      const l = params.get('lang');
+      const p = params.get('poi');
+      if (l) setLanguage(l.toLowerCase());
+      if (p) {
+        setTimeout(() => openPOI(p.toUpperCase()), 150);
+      }
+    });
+  
+    async function highlightActiveRoomsOnMap() {
+      try {
+        const res = await fetch('/api/rooms/status');
+        const data = await res.json();
+        if (data.success && data.rooms) {
+          data.rooms.forEach(r => {
+            if (r.is_qr_active && r.svg_id) {
+              const el = document.getElementById(r.svg_id);
+              if (el) {
+                el.classList.add('room-map-group-search-target');
+              }
+            }
+          });
+        }
+      } catch(e) {}
+    }
+
+    // Автоматический переход к аудитории из параметров URL (?room=241 или ?poi=241)
+    window.addEventListener('load', () => {
+      const p = new URLSearchParams(window.location.search);
+      const roomParam = p.get('room') || p.get('poi');
+      if (roomParam) {
+        setTimeout(() => {
+          if (roomParam.includes('241') || roomParam.includes('240') || roomParam.includes('228') || roomParam.includes('229') || roomParam.includes('230')) {
+            switchFloor(2, () => {
+              panX = -250; panY = -80; scale = 1.6;
+              updateTransform();
+              showClassroomCard('С1.3.241', 'C1.3');
+            });
+          }
+        }, 300);
+      }
+    });
+    
+</script>
+</body>
+</html>

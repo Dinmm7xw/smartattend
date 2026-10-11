@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=no, viewport-fit=cover">
+  <title>SmartAttend — Мобильді Кампус Картасы (AITU Block C1)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="page_loader.css">
+  <style>
+    :root {
+      --bg: #F8FAFC;
+      --surface: #FFFFFF;
+      --primary: #0062FF;
+      --primary-hover: #0050D4;
+      --primary-light: #EFF6FF;
+      --text: #0F172A;
+      --text-muted: #64748B;
+      --border: #E2E8F0;
+      --border-dark: #CBD5E1;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --danger: #EF4444;
+      --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.12);
+      --shadow-lg: 0 16px 40px rgba(15, 23, 42, 0.18);
+      --radius: 16px;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: var(--font);
+      background-color: #0F172A; /* Phone frame background on desktop */
+      color: var(--text);
+    }
+
+    /* ── MOBILE DEVICE WRAPPER ── */
+    .mobile-app-shell {
+      width: 100%;
+      max-width: 440px;
+      height: 100%;
+      margin: 0 auto;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+    }
+
+    @media (min-width: 441px) {
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at center, #1E293B 0%, #0F172A 100%);
+      }
+      .mobile-app-shell {
+        height: 94vh;
+        max-height: 900px;
+        border-radius: 40px;
+        border: 8px solid #334155;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      }
+    }
+
+    /* Embedded mode when inside Flutter app */
+    body.embedded {
+      background: transparent !important;
+      display: block !important;
+    }
+    body.embedded .mobile-app-shell {
+      max-width: 100% !important;
+      height: 100% !important;
+      max-height: 100% !important;
+      border: none !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+    }
+    body.embedded .status-bar,
+    body.embedded .mobile-bottom-nav {
+      display: none !important;
+    }
+
+    /* ── STATUS BAR ── */
+    .status-bar {
+      height: 38px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      background: var(--surface);
+      z-index: 60;
+      flex-shrink: 0;
+    }
+    .status-icons {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ── TOP APP BAR ── */
+    .mobile-app-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 50;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+    }
+    .app-bar-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0, 98, 255, 0.3);
+    }
+    .brand-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.2;
+    }
+    .brand-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* Search Bar */
+    .search-wrap {
+      position: relative;
+      width: 100%;
+    }
+    .search-input {
+      width: 100%;
+      height: 38px;
+      border-radius: 12px;
+      background: #F1F5F9;
+      border: 1px solid var(--border);
+      padding: 0 36px 0 36px;
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--text);
+      outline: none;
+      transition: all 0.2s;
+    }
+    .search-input:focus {
+      background: #fff;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0, 98, 255, 0.15);
+    }
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+    .search-clear-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 14px;
+      cursor: pointer;
+      display: none;
+    }
+
+    /* Horizontal POI Quick Chips */
+    .poi-chips-scroll {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 2px;
+    }
+    .poi-chips-scroll::-webkit-scrollbar { display: none; }
+    .poi-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #F1F5F9;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 11px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .poi-chip:hover, .poi-chip:active {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* ── MAP VIEWPORT ── */
+    .map-viewport {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 50%, #F8FAFC 0%, #EEF2F6 100%);
+      touch-action: none;
+      user-select: none;
+    }
+    .map-canvas-container {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform-origin: center center;
+      will-change: transform;
+      cursor: grab;
+    }
+    .map-canvas-container:active {
+      cursor: grabbing;
+    }
+
+    /* Real AITU SVG Styling */
+    #map-svg-root {
+      width: 900px;
+      height: 480px;
+      position: relative;
+    }
+    #map-svg-root svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    #map-svg-root polygon,
+    #map-svg-root polyline {
+      fill: #EFF4FF;
+      stroke: #CBD5E1;
+      stroke-width: 0.8px;
+      transition: fill 0.2s;
+    }
+    .map-groups-stairs polygon,
+    .map-groups-stairs polyline {
+      fill: #E2E8F0 !important;
+      stroke: #94A3B8 !important;
+    }
+    .map-groups-wcs polygon,
+    .map-groups-wcs polyline,
+    .map-groups-techs polygon,
+    .map-groups-techs polyline,
+    .map-groups-escapes polygon,
+    .map-groups-escapes polyline {
+      fill: #F1F5F9 !important;
+      stroke: #CBD5E1 !important;
+    }
+    .map-label-huge {
+      fill: #CBD5E1 !important;
+    }
+    .map-label path {
+      fill: #64748B !important;
+    }
+    .map-groups-rooms g line,
+    .map-groups-rooms g polygon,
+    .map-groups-rooms g polyline,
+    .map-groups-rooms g rect {
+      fill: #EFF6FF !important;
+      stroke: #93C5FD !important;
+      cursor: pointer;
+    }
+    .map-groups-rooms g:hover line,
+    .map-groups-rooms g:hover polygon,
+    .map-groups-rooms g:hover polyline,
+    .map-groups-rooms g:hover rect {
+      fill: #DBEAFE !important;
+      stroke: #0062FF !important;
+    }
+    /* Target Room Highlight */
+    .room-target-highlight line,
+    .room-target-highlight polygon,
+    .room-target-highlight polyline,
+    .room-target-highlight rect {
+      fill: #0062FF !important;
+      stroke: #FFFFFF !important;
+      stroke-width: 2.5px !important;
+      filter: drop-shadow(0 0 14px rgba(0, 98, 255, 0.8)) !important;
+      animation: pulseTarget 1.2s infinite alternate ease-in-out !important;
+    }
+    @keyframes pulseTarget {
+      0% { fill: #0062FF; }
+      100% { fill: #3B82F6; }
+    }
+
+    /* ── USER LOCATION PIN ("СІЗ ОСЫНДАСЫЗ") ── */
+    .user-location-pin {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--primary);
+      border: 3.5px solid #FFFFFF;
+      box-shadow: 0 4px 12px rgba(0, 98, 255, 0.4);
+      z-index: 35;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .user-location-pin::after {
+      content: "";
+      position: absolute;
+      inset: -12px;
+      border-radius: 50%;
+      background: rgba(0, 98, 255, 0.25);
+      animation: radarPulse 2s infinite ease-out;
+    }
+    @keyframes radarPulse {
+      0% { transform: scale(0.6); opacity: 1; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    .user-pin-label {
+      position: absolute;
+      bottom: 26px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0F172A;
+      color: #fff;
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 12px;
+      white-space: nowrap;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .user-pin-label::after {
+      content: "";
+      position: absolute;
+      bottom: -4px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 4px 4px 0;
+      border-style: solid;
+      border-color: #0F172A transparent transparent;
+    }
+
+    /* ── NAVIGATION ROUTE SVG LAYER ── */
+    #route-svg-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 30;
+    }
+    .route-path-animated {
+      stroke: var(--primary);
+      stroke-width: 5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      stroke-dasharray: 8 6;
+      animation: dashMove 1s linear infinite;
+    }
+    @keyframes dashMove {
+      to { stroke-dashoffset: -28; }
+    }
+
+    /* ── FLOATING CONTROLS (FLOOR PILLS & ZOOM) ── */
+    .floating-floors {
+      position: absolute;
+      right: 14px;
+      top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 5px;
+      box-shadow: var(--shadow-md);
+      z-index: 40;
+    }
+    .floor-pill {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      border: none;
+      background: transparent;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .floor-pill.active {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 3px 10px rgba(0, 98, 255, 0.35);
+    }
+
+    .floating-tools {
+      position: absolute;
+      right: 14px;
+      bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 40;
+    }
+    .tool-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 18px;
+      transition: all 0.2s;
+    }
+    .tool-btn:active {
+      transform: scale(0.92);
+      background: #F1F5F9;
+    }
+    .tool-btn-locate {
+      color: var(--primary);
+    }
+
+    /* ── MOBILE BOTTOM SHEET (LIVE CLASSROOM INSPECTOR) ── */
+    .bottom-sheet {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--surface);
+      border-radius: 24px 24px 0 0;
+      box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.15);
+      border-top: 1px solid var(--border);
+      z-index: 55;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      max-height: 70%;
+    }
+    .bottom-sheet.open {
+      transform: translateY(0);
+    }
+    .sheet-handle {
+      width: 40px;
+      height: 4px;
+      border-radius: 2px;
+      background: #CBD5E1;
+      margin: 10px auto 4px;
+      cursor: pointer;
+    }
+    .sheet-body {
+      padding: 12px 18px 20px;
+      overflow-y: auto;
+    }
+    .sheet-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .sheet-room-code {
+      font-size: 19px;
+      font-weight: 900;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .live-badge {
+      font-size: 10.5px;
+      font-weight: 800;
+      background: #DCFCE7;
+      color: #15803D;
+      padding: 3px 8px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #16A34A;
+      animation: pulseDot 1.5s infinite;
+    }
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .sheet-close-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: #F1F5F9;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    /* Live Card Rows */
+    .sheet-info-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #F1F5F9;
+      font-size: 13px;
+    }
+    .sheet-info-label {
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .sheet-info-value {
+      color: var(--text);
+      font-weight: 700;
+      text-align: right;
+    }
+
+    /* Roster Alerts */
+    .roster-card {
+      background: #F8FAFC;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      margin: 12px 0;
+      font-size: 12px;
+    }
+    .roster-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 0;
+    }
+    .tag-late {
+      background: #FEF3C7;
+      color: #B45309;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 10.5px;
+    }
+    .tag-excused {
+      background: #DCFCE7;
+      color: #15803D;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 10.5px;
+    }
+
+    /* Sheet Action Buttons */
+    .sheet-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .btn {
+      flex: 1;
+      height: 42px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 3px 12px rgba(0, 98, 255, 0.25);
+    }
+    .btn-primary:active { background: var(--primary-hover); transform: scale(0.98); }
+    .btn-secondary {
+      background: #F1F5F9;
+      color: var(--text);
+    }
+
+    /* ── MOBILE BOTTOM NAVIGATION BAR ── */
+    .mobile-bottom-nav {
+      height: 62px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 50;
+      flex-shrink: 0;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04);
+      padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex: 1;
+      padding: 6px 0;
+    }
+    .nav-item svg {
+      transition: transform 0.2s;
+    }
+    .nav-item.active {
+      color: var(--primary);
+    }
+    .nav-item.active svg {
+      transform: translateY(-1px);
+    }
+    .nav-item-scan-pill {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(0, 98, 255, 0.4);
+      margin-top: -16px;
+      border: 3px solid #fff;
+    }
+
+    /* TOAST */
+    .mobile-toast {
+      position: absolute;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-30px);
+      background: #0F172A;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 16px;
+      border-radius: 20px;
+      box-shadow: var(--shadow-md);
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .mobile-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- MOBILE APP CONTAINER -->
+  <div class="mobile-app-shell">
+
+    <!-- 1. MOBILE PHONE STATUS BAR -->
+    <div class="status-bar">
+      <span>15:58</span>
+      <div class="status-icons">
+        <!-- 5G / WiFi / Battery SVG Icons -->
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+          <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+          <line x1="12" y1="20" x2="12.01" y2="20"/>
+        </svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <rect x="2" y="7" width="16" height="10" rx="2" ry="2"/>
+          <line x1="22" y1="11" x2="22" y2="13"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 2. TOP MOBILE APP BAR -->
+    <header class="mobile-app-bar">
+      <div class="app-bar-top">
+        <div class="brand-group">
+          <div class="brand-badge">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+              <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+            </svg>
+          </div>
+          <div>
+            <div class="brand-title">AITU Кампус Картасы</div>
+            <div class="brand-sub">Блок C1 · 3D Векторлық Навигатор</div>
+          </div>
+        </div>
+        <button onclick="locateMe()" style="background:none;border:none;color:var(--primary);cursor:pointer;" title="Мені табу">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <circle cx="12" cy="12" r="10"/>
+            <circle cx="12" cy="12" r="3" fill="currentColor"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Quick Search -->
+      <div class="search-wrap">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" class="search-input" id="search-input" placeholder="Кабинет (C1.3.241, 143, Асхана, Gym)..." oninput="handleSearch(this.value)">
+      </div>
+
+      <!-- Quick POI Filters -->
+      <div class="poi-chips-scroll">
+        <div class="poi-chip" onclick="quickFind('C1.3.241')">🎯 БҚ2405 (241)</div>
+        <div class="poi-chip" onclick="quickFind('ZONE_DININGHALL')">🍽️ Асхана</div>
+        <div class="poi-chip" onclick="quickFind('ZONE_LIBRARY')">📚 Кітапхана</div>
+        <div class="poi-chip" onclick="quickFind('ZONE_GYM')">🏀 Спортзал</div>
+        <div class="poi-chip" onclick="quickFind('ZONE_ASSEMBLYHALL')">🏛️ Акт залы</div>
+        <div class="poi-chip" onclick="quickFind('ZONE_MEDIKER')">💊 Медпункт (143)</div>
+      </div>
+    </header>
+
+    <!-- 3. INTERACTIVE MAP VIEWPORT -->
+    <main class="map-viewport" id="map-viewport">
+
+      <!-- Map Pan/Zoom Container -->
+      <div class="map-canvas-container" id="map-container">
+        <!-- Real SVG Blueprint Container -->
+        <div id="map-svg-root"></div>
+
+        <!-- SVG Navigation Route Layer -->
+        <svg id="route-svg-layer">
+          <path id="route-path" class="route-path-animated" d="" />
+        </svg>
+
+        <!-- User Pin ("Сіз осындасыз") -->
+        <div class="user-location-pin" id="user-pin" style="display:none;">
+          <div class="user-pin-label">Сіз осындасыз 🔵</div>
+        </div>
+      </div>
+
+      <!-- Floating Floor Selector Pills (1, 2, 3) -->
+      <div class="floating-floors">
+        <button class="floor-pill" data-floor="3" onclick="switchFloor(3)">3</button>
+        <button class="floor-pill active" data-floor="2" onclick="switchFloor(2)">2</button>
+        <button class="floor-pill" data-floor="1" onclick="switchFloor(1)">1</button>
+      </div>
+
+      <!-- Floating Tool Buttons (+, -, Locate) -->
+      <div class="floating-tools">
+        <button class="tool-btn" onclick="zoomIn()" title="Жақындату">+</button>
+        <button class="tool-btn" onclick="zoomOut()" title="Алыстату">−</button>
+        <button class="tool-btn tool-btn-locate" onclick="locateMe()" title="Орналасқан жерім">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+            <circle cx="12" cy="12" r="7"/>
+            <polyline points="12 9 12 12 13.5 13.5"/>
+            <path d="M12 2v2M12 20v2M2 12h2M20 12h2"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Mobile Toast -->
+      <div class="mobile-toast" id="mobile-toast">
+        <span id="toast-text">Маршрут сызылды</span>
+      </div>
+
+      <!-- 4. BOTTOM SHEET: LIVE ROOM INSPECTOR -->
+      <div class="bottom-sheet" id="bottomSheet">
+        <div class="sheet-handle" onclick="closeSheet()"></div>
+        <div class="sheet-body">
+          <div class="sheet-header">
+            <div>
+              <div class="sheet-room-code" id="sheet-room-title">
+                C1.3.241 Аудиториясы
+              </div>
+              <div style="font-size: 12px; color: var(--text-muted); font-weight: 600; margin-top: 2px;" id="sheet-room-desc">
+                Киберқауіпсіздік және криптография зертханасы
+              </div>
+            </div>
+            <div class="live-badge" id="sheet-live-badge">
+              <span class="live-dot"></span> LIVE
+            </div>
+            <button class="sheet-close-btn" onclick="closeSheet()">✕</button>
+          </div>
+
+          <!-- Live Classroom Metrics -->
+          <div class="sheet-info-row">
+            <span class="sheet-info-label">👨‍🏫 Преподаватель</span>
+            <span class="sheet-info-value" id="sheet-teacher">Абдрахманов Д.К.</span>
+          </div>
+          <div class="sheet-info-row">
+            <span class="sheet-info-label">👥 Академиялық топ</span>
+            <span class="sheet-info-value" id="sheet-group">БҚ2405 (2-курс)</span>
+          </div>
+          <div class="sheet-info-row">
+            <span class="sheet-info-label">📊 Сабақта отыр</span>
+            <span class="sheet-info-value" style="color:var(--success);" id="sheet-present">18 / 20 студент (90%)</span>
+          </div>
+
+          <!-- Roster list: Late & Excused -->
+          <div class="roster-card" id="roster-card">
+            <div style="font-weight: 800; margin-bottom: 6px; color: var(--text);">Тәртіп және қатысу журналы:</div>
+            <div class="roster-item">
+              <span>⚠️ Ахметов Е. (Кешігу)</span>
+              <span class="tag-late">+14 мин</span>
+            </div>
+            <div class="roster-item">
+              <span>📄 Байтомор Д. (Ата-ана распискасы)</span>
+              <span class="tag-excused">ЭЦП Расталған ✅</span>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="sheet-actions">
+            <button class="btn btn-secondary" onclick="closeSheet()">Жабу</button>
+            <button class="btn btn-primary" onclick="buildRouteToActiveRoom()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <polyline points="12 5 19 12 12 19"/>
+              </svg>
+              Маршрут сызу
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- 5. MOBILE BOTTOM NAVIGATION BAR -->
+    <nav class="mobile-bottom-nav">
+      <a href="index.html" class="nav-item" onclick="if(window.showLoader) window.showLoader();">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        <span>Басты</span>
+      </a>
+
+      <a href="map_mobile.html" class="nav-item active">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+          <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+          <line x1="9" y1="3" x2="9" y2="18"/>
+          <line x1="15" y1="6" x2="15" y2="21"/>
+        </svg>
+        <span>Карта</span>
+      </a>
+
+      <div class="nav-item">
+        <div class="nav-item-scan-pill" onclick="showToast('QR Сканер камерасы іске қосылуда...')">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
+            <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+            <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
+            <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+            <line x1="7" y1="12" x2="17" y2="12"/>
+          </svg>
+        </div>
+        <span style="margin-top: 14px;">QR</span>
+      </div>
+
+      <a href="profile_mobile.html" class="nav-item" onclick="if(window.showLoader) window.showLoader();">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        <span>Профиль</span>
+      </a>
+    </nav>
+
+  </div>
+
+  <!-- LOAD REAL AITU BLUEPRINTS SCRIPT (RELATIVE PATH) -->
+  <script src="aitu_floors_data.js"></script>
+  <!-- SmartAttend Page Transition Loader -->
+  <script src="page_loader.js"></script>
+
+  <script>
+    'use strict';
+
+    if (window.location.search.includes('embedded=1') || window.self !== window.top) {
+      document.body.classList.add('embedded');
+    }
+
+    // ── STATE ──
+    let currentFloor = 2;
+    let scale = 0.55;
+    let panX = 0, panY = 0;
+    let isDragging = false;
+    let startX = 0, startY = 0;
+    let activeRoomEl = null;
+    let activeRoomCode = null;
+
+    const container = document.getElementById('map-container');
+    const viewport = document.getElementById('map-viewport');
+    const userPin = document.getElementById('user-pin');
+    const bottomSheet = document.getElementById('bottomSheet');
+
+    // ── TOAST ──
+    let toastTimer;
+    function showToast(msg) {
+      const toast = document.getElementById('mobile-toast');
+      document.getElementById('toast-text').textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+    }
+
+    // ── INITIALIZATION ──
+    window.addEventListener('DOMContentLoaded', () => {
+      // Load real Floor 2 blueprint
+      loadFloor(2);
+      centerMap();
+    });
+
+    // ── RENDER REAL VECTOR FLOOR ──
+    function loadFloor(floorNum) {
+      currentFloor = floorNum;
+      
+      // Update floor pills
+      document.querySelectorAll('.floor-pill').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.floor) === floorNum);
+      });
+
+      if (!window.AITU_FLOORS) {
+        console.error("AITU_FLOORS data not loaded!");
+        return;
+      }
+
+      const svgCode = window.AITU_FLOORS[`floor${floorNum}`];
+      if (!svgCode) return;
+
+      const root = document.getElementById('map-svg-root');
+      root.innerHTML = svgCode;
+
+      const svg = root.querySelector('svg');
+      if (svg) {
+        svg.setAttribute('width', '100%');
+        svg.setAttribute('height', '100%');
+      }
+
+      attachRoomEvents();
+      updateUserPin();
+      clearRoute();
+      closeSheet();
+    }
+
+    function switchFloor(f) {
+      if (window.showLoader) window.showLoader();
+      loadFloor(f);
+      setTimeout(() => {
+        if (window.hideLoader) window.hideLoader();
+        showToast(`${f}-қабатқа ауыстырылды`);
+      }, 220);
+    }
+
+    // ── ROOM CLICK EVENT LISTENER ──
+    function attachRoomEvents() {
+      const rooms = document.querySelectorAll('#map-svg-root g[id], #map-svg-root g[data-name], #map-svg-root .map-groups-gym');
+      rooms.forEach(el => {
+        const id = el.getAttribute('id') || '';
+        const name = el.getAttribute('data-name') || id;
+
+        if (['WALLPAPER', 'FIRST_FLOOR', 'SECOND_FLOOR', 'THIRD_FLOOR', 'C1.1', 'C1.2', 'C1.3'].includes(id)) {
+          return;
+        }
+
+        el.style.cursor = 'pointer';
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (window.showLoader) {
+            window.showLoader();
+            setTimeout(() => {
+              if (window.hideLoader) window.hideLoader();
+            }, 200);
+          }
+          inspectRoom(el, name);
+        });
+      });
+    }
+
+    // ── ROOM INSPECTOR / BOTTOM SHEET ──
+    function inspectRoom(el, roomIdentifier) {
+      if (activeRoomEl) activeRoomEl.classList.remove('room-target-highlight');
+      activeRoomEl = el;
+      activeRoomEl.classList.add('room-target-highlight');
+      activeRoomCode = roomIdentifier;
+
+      // Fill Bottom Sheet Info
+      const title = document.getElementById('sheet-room-title');
+      const desc = document.getElementById('sheet-room-desc');
+      const teacher = document.getElementById('sheet-teacher');
+      const group = document.getElementById('sheet-group');
+      const present = document.getElementById('sheet-present');
+      const roster = document.getElementById('roster-card');
+
+      if (roomIdentifier.includes('241')) {
+        title.innerHTML = `C1.3.241 Аудиториясы <span class="live-badge"><span class="live-dot"></span> LIVE</span>`;
+        desc.textContent = 'Киберқауіпсіздік және желілік қауіпсіздік зертханасы';
+        teacher.textContent = 'Абдрахманов Д.К.';
+        group.textContent = 'БҚ2405 (Ақпараттық қауіпсіздік)';
+        present.textContent = '18 / 20 студент қатысуда';
+        roster.style.display = 'block';
+        roster.innerHTML = `
+          <div style="font-weight: 800; margin-bottom: 6px; color: var(--text);">Тәртіп журналы (Деканат):</div>
+          <div class="roster-item">
+            <span>⚠️ Ахметов Е. (Кешігу)</span>
+            <span class="tag-late">+14 мин</span>
+          </div>
+          <div class="roster-item">
+            <span>📄 Байтомор Д. (Ата-ана распискасы)</span>
+            <span class="tag-excused">ЭЦП Расталған ✅</span>
+          </div>
+        `;
+      } else if (roomIdentifier.includes('DINING')) {
+        title.textContent = 'Студенттер асханасы (Dining Hall)';
+        desc.textContent = '1-қабат · Ыстық тағамдар мен кофе орталығы';
+        teacher.textContent = 'Бас әкімші';
+        group.textContent = 'Барлық топтар';
+        present.textContent = 'Ашық · 08:00 – 18:30';
+        roster.style.display = 'none';
+      } else {
+        const clean = roomIdentifier.split('|')[0].replace('ZONE_', '');
+        title.textContent = `Аудитория ${clean}`;
+        desc.textContent = `${currentFloor}-қабат · Оқу аудиториясы`;
+        teacher.textContent = 'Кесте бойынша';
+        group.textContent = 'Ағымдағы сабақ';
+        present.textContent = 'Сабақ жүріп жатыр';
+        roster.style.display = 'none';
+      }
+
+      bottomSheet.classList.add('open');
+
+      // Pan to room center
+      try {
+        const bbox = el.getBBox();
+        panX = -(bbox.x + bbox.width / 2 - 450) * scale;
+        panY = -(bbox.y + bbox.height / 2 - 240) * scale - 40;
+        updateTransform();
+      } catch(e) {}
+    }
+
+    function closeSheet() {
+      bottomSheet.classList.remove('open');
+      if (activeRoomEl) {
+        activeRoomEl.classList.remove('room-target-highlight');
+        activeRoomEl = null;
+      }
+    }
+
+    // ── USER PIN LOCATION ──
+    function updateUserPin() {
+      // Показываем метку на 2 и 3 этажах (на лестнице/входе)
+      userPin.style.display = 'block';
+      userPin.style.left = '450px';
+      userPin.style.top = '320px';
+    }
+
+    function locateMe() {
+      switchFloor(2);
+      panX = 0; panY = -30;
+      scale = 0.75;
+      updateTransform();
+      showToast('Орналасқан жеріңіз белгіленді 🔵');
+    }
+
+    // ── NAVIGATION ROUTE BUILDER ──
+    function buildRouteToActiveRoom() {
+      if (!activeRoomEl) return;
+      try {
+        const bbox = activeRoomEl.getBBox();
+        const startX = 450;
+        const startY = 320;
+        const targetX = bbox.x + bbox.width / 2;
+        const targetY = bbox.y + bbox.height / 2;
+
+        const corridorY = 240;
+        const pathData = `M ${startX} ${startY} L ${targetX} ${corridorY} L ${targetX} ${targetY}`;
+        document.getElementById('route-path').setAttribute('d', pathData);
+        showToast('Маршрут сызылды! Навигация белсенді 🎯');
+      } catch(e) {
+        showToast('Маршрут құрылды');
+      }
+    }
+
+    function clearRoute() {
+      document.getElementById('route-path').setAttribute('d', '');
+    }
+
+    // ── SEARCH & QUICK POI ──
+    function handleSearch(q) {
+      const term = q.trim().toUpperCase();
+      if (!term) return;
+
+      if (term.includes('241')) {
+        quickFind('C1.3.241');
+      } else if (term.includes('АСХАНА') || term.includes('DINING')) {
+        quickFind('ZONE_DININGHALL');
+      } else if (term.includes('GYM') || term.includes('СПОРТ')) {
+        quickFind('ZONE_GYM');
+      } else if (term.includes('КІТАП') || term.includes('LIB')) {
+        quickFind('ZONE_LIBRARY');
+      }
+    }
+
+    function quickFind(key) {
+      if (window.showLoader) window.showLoader();
+      if (key.includes('241')) {
+        if (currentFloor !== 2) loadFloor(2);
+      } else if (key.includes('DINING') || key.includes('ASSEMBLY') || key.includes('GYM')) {
+        if (currentFloor !== 1) loadFloor(1);
+      }
+
+      setTimeout(() => {
+        const target = Array.from(document.querySelectorAll('#map-svg-root g[id], #map-svg-root g[data-name]')).find(el => {
+          const id = (el.getAttribute('id') || '').toUpperCase();
+          const name = (el.getAttribute('data-name') || '').toUpperCase();
+          return id.includes(key.toUpperCase()) || name.includes(key.toUpperCase());
+        });
+
+        if (window.hideLoader) window.hideLoader();
+
+        if (target) {
+          inspectRoom(target, key);
+        } else {
+          showToast('Аудитория табылмады');
+        }
+      }, 200);
+    }
+
+    // ── TOUCH PAN & ZOOM ENGINE ──
+    function updateTransform() {
+      container.style.transform = `translate(calc(-50% + ${panX}px), calc(-50% + ${panY}px)) scale(${scale})`;
+    }
+
+    function centerMap() {
+      scale = 0.55;
+      panX = 0; panY = 0;
+      updateTransform();
+    }
+
+    function zoomIn() {
+      scale = Math.min(scale * 1.25, 2.0);
+      updateTransform();
+    }
+
+    function zoomOut() {
+      scale = Math.max(scale / 1.25, 0.35);
+      updateTransform();
+    }
+
+    // Touch events for mobile dragging
+    viewport.addEventListener('touchstart', (e) => {
+      if (e.target.closest('.floating-floors') || e.target.closest('.floating-tools') || e.target.closest('.bottom-sheet')) return;
+      isDragging = true;
+      startX = e.touches[0].clientX - panX;
+      startY = e.touches[0].clientY - panY;
+    }, { passive: true });
+
+    viewport.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      panX = e.touches[0].clientX - startX;
+      panY = e.touches[0].clientY - startY;
+      updateTransform();
+    }, { passive: true });
+
+    viewport.addEventListener('touchend', () => { isDragging = false; });
+
+    // Mouse events for testing in browser
+    viewport.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.floating-floors') || e.target.closest('.floating-tools') || e.target.closest('.bottom-sheet')) return;
+      isDragging = true;
+      startX = e.clientX - panX;
+      startY = e.clientY - panY;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      panX = e.clientX - startX;
+      panY = e.clientY - startY;
+      updateTransform();
+    });
+
+    window.addEventListener('mouseup', () => { isDragging = false; });
+  </script>
+</body>
+</html>

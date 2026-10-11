@@ -1,0 +1,1974 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SmartAttend — Ақылды Қатысу Жүйесі</title>
+<meta name="description" content="SmartAttend — QR-код, Face ID биометриясы және жедел хабарландыру арқылы студенттер мен оқытушылардың сабаққа қатысуын есепке алу жүйесі."/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="page_loader.css"/>
+<script src="page_loader.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+/* ── Reset & Variables ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#0062FF;--blue-dk:#0047CC;--blue-lt:#EFF4FF;--blue-mid:#DBEAFE;
+  --green:#10B981;--green-lt:#DCFCE7;
+  --red:#EF4444;--red-lt:#FEE2E2;
+  --orange:#F59E0B;--orange-lt:#FEF3C7;
+  --slate:#64748B;--dark:#0F172A;--bg:#F8FAFC;--white:#fff;--border:#E2E8F0;
+  --shadow:0 25px 50px -12px rgba(0,98,255,.12),0 8px 24px rgba(0,0,0,.06);
+  --shadow-sm:0 4px 16px rgba(0,0,0,.07);
+  --r:16px;--r-sm:10px;--r-xs:6px;
+  --tr:all .25s cubic-bezier(.4,0,.2,1);
+}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--dark);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+button{cursor:pointer;border:none;background:none;font-family:inherit}
+input,select{font-family:inherit}
+a{text-decoration:none;color:inherit}
+
+/* ── Pages ── */
+.page{display:none;min-height:100vh;position:relative;overflow:hidden;background:var(--bg)}
+.page.active{display:block}
+
+/* ── Blue Blob ── */
+.blue-blob{position:fixed;top:0;right:0;width:44%;height:100vh;pointer-events:none;z-index:2}
+.blob-svg{position:absolute;top:0;right:0;width:100%;height:100%}
+.blob-actions{position:absolute;top:22px;right:28px;z-index:20;display:flex;align-items:center;gap:14px;pointer-events:all}
+.lang-sw{display:flex;align-items:center;gap:3px;background:rgba(255,255,255,.18);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.3);border-radius:24px;padding:5px 12px}
+.lang-btn{color:rgba(255,255,255,.7);font-size:11px;font-weight:700;letter-spacing:.05em;padding:2px 5px;border-radius:4px;transition:var(--tr)}
+.lang-btn:hover,.lang-btn.active{color:#fff;background:rgba(255,255,255,.22)}
+.lang-div{color:rgba(255,255,255,.3);font-size:11px}
+.blob-cta{background:rgba(255,255,255,.2);backdrop-filter:blur(12px);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:24px;padding:8px 20px;font-size:13px;font-weight:700;transition:var(--tr)}
+.blob-cta:hover{background:rgba(255,255,255,.32);transform:translateY(-2px)}
+
+/* ── Header ── */
+.header{position:relative;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:18px 40px;background:transparent}
+.logo{display:flex;align-items:center;gap:10px;cursor:pointer}
+.logo-text{font-size:20px;font-weight:900;color:var(--dark);letter-spacing:-.02em}
+.logo-accent{color:var(--blue)}
+.nav{display:flex;gap:28px}
+.nav-link{font-size:14px;font-weight:500;color:var(--slate);transition:var(--tr);position:relative;padding-bottom:2px}
+.nav-link::after{content:'';position:absolute;bottom:-2px;left:0;width:0;height:2px;background:var(--blue);border-radius:2px;transition:width .25s}
+.nav-link:hover{color:var(--dark)}
+.nav-link:hover::after{width:100%}
+.hdr-right{display:flex;gap:10px;align-items:center}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;font-weight:600;border-radius:28px;transition:var(--tr);cursor:pointer;border:none;position:relative;overflow:hidden}
+.btn-primary{background:var(--blue);color:#fff;padding:10px 24px;font-size:14px}
+.btn-primary:hover{background:var(--blue-dk);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,98,255,.38)}
+.btn-primary:active{transform:translateY(-1px)}
+.btn-primary.full{width:100%;border-radius:var(--r-sm);font-size:15px;padding:14px}
+.btn-ghost{background:transparent;color:var(--slate);padding:10px 20px;font-size:14px;border:1.5px solid var(--border)}
+.btn-ghost:hover{color:var(--blue);border-color:var(--blue);transform:translateY(-2px)}
+.btn-ghost.sm{padding:7px 14px;font-size:12px}
+.btn-social{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:12px;font-size:14px;font-weight:600;color:var(--dark);display:flex;align-items:center;justify-content:center;gap:8px;transition:var(--tr)}
+.btn-social:hover{border-color:var(--blue);background:var(--blue-lt);transform:translateY(-2px)}
+.pulse{animation:pulseShadow 2.4s ease-in-out infinite}
+@keyframes pulseShadow{0%,100%{box-shadow:0 0 0 0 rgba(0,98,255,.35)}50%{box-shadow:0 0 0 14px rgba(0,98,255,0)}}
+
+/* ── Floating Card ── */
+.card{background:var(--white);border-radius:24px;padding:36px 32px;box-shadow:var(--shadow);transition:var(--tr)}
+.card:hover{transform:translateY(-4px);box-shadow:0 32px 64px -8px rgba(0,98,255,.16)}
+
+/* ── LANDING HERO ── */
+.hero{display:flex;align-items:center;justify-content:center;gap:28px;padding:10px 32px 0;min-height:calc(100vh - 90px);position:relative;z-index:10}
+.hero-illus{flex:0 0 200px;display:flex;align-items:center;justify-content:center}
+.illus-l{animation:float 5s ease-in-out infinite}
+.illus-r{animation:float 5s ease-in-out infinite 1.5s}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+
+/* Landing card */
+#lcard{flex:0 0 400px;max-width:400px;animation:cfloat 6s ease-in-out infinite}
+#lcard:hover{animation-play-state:paused}
+@keyframes cfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.cbadge{display:inline-flex;align-items:center;gap:6px;background:var(--green-lt);color:var(--green);font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;margin-bottom:20px}
+.bdot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 1.4s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.clogo{display:flex;justify-content:center;margin-bottom:16px}
+.ctitle{font-size:22px;font-weight:900;color:var(--dark);letter-spacing:-.02em;text-align:center;margin-bottom:6px}
+.csub{font-size:13px;color:var(--slate);text-align:center;margin-bottom:22px;font-weight:500}
+.cstats{display:flex;align-items:center;justify-content:space-around;background:var(--bg);border-radius:var(--r-sm);padding:14px 8px;margin-bottom:20px;border:1px solid var(--border)}
+.sitem{text-align:center}
+.snum{font-size:20px;font-weight:900;color:var(--blue);letter-spacing:-.03em}
+.snum span{font-size:11px;font-weight:500;color:var(--slate);margin-left:1px}
+.slbl{font-size:10px;color:var(--slate);font-weight:500;margin-top:2px}
+.sdiv{width:1px;height:32px;background:var(--border)}
+.croles{display:flex;gap:8px;margin-bottom:18px}
+.rbtn{flex:1;padding:9px 6px;border-radius:var(--r-sm);font-size:12px;font-weight:700;color:var(--slate);border:1.5px solid var(--border);background:var(--white);transition:var(--tr);cursor:pointer}
+.rbtn.active,.rbtn:hover{color:var(--blue);border-color:var(--blue);background:var(--blue-lt)}
+.cnote{text-align:center;font-size:11px;color:var(--slate);margin-top:10px}
+
+/* Feature tags */
+.ftags{position:relative;z-index:10;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;padding:16px 32px 28px}
+.ftag{display:flex;align-items:center;gap:6px;background:var(--white);border:1px solid var(--border);border-radius:20px;padding:7px 14px;font-size:12px;font-weight:500;box-shadow:var(--shadow-sm);transition:var(--tr)}
+.ftag:hover{border-color:var(--blue);color:var(--blue);transform:translateY(-2px)}
+
+/* QR laser */
+.ql{animation:laserScan 2s ease-in-out infinite}
+@keyframes laserScan{0%{y:10px;opacity:1}50%{y:42px;opacity:.5}100%{y:10px;opacity:1}}
+
+/* ── AUTH ── */
+.auth-main{display:flex;align-items:center;justify-content:center;gap:36px;padding:16px 32px;min-height:calc(100vh - 80px);position:relative;z-index:10}
+.auth-card{flex:0 0 400px;max-width:400px;padding:30px 28px}
+.atabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:22px}
+.atab{flex:1;padding:10px;font-size:14px;font-weight:700;color:var(--slate);border-bottom:2px solid transparent;margin-bottom:-2px;transition:var(--tr)}
+.atab.active{color:var(--blue);border-color:var(--blue)}
+.asub{font-size:15px;font-weight:800;color:var(--dark);margin-bottom:18px;text-align:center}
+.fgrp{margin-bottom:14px}
+.fgrp label{display:block;font-size:11px;font-weight:700;color:var(--dark);margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em}
+.inpw{position:relative;display:flex;align-items:center}
+.inpw input,.inpw select{width:100%;padding:11px 12px 11px 38px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;color:var(--dark);background:var(--white);outline:none;transition:var(--tr)}
+.inpw input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,98,255,.1)}
+.iico{position:absolute;left:11px;font-size:15px;pointer-events:none;z-index:1}
+.tpwd{position:absolute;right:10px;font-size:14px;opacity:.5;cursor:pointer;background:none;border:none;transition:opacity .2s}
+.tpwd:hover{opacity:.9}
+.frow{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.cklbl{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--slate);cursor:pointer}
+.lnk{font-size:13px;color:var(--blue);font-weight:600}
+.lnk:hover{text-decoration:underline}
+.rsg label{font-size:11px;font-weight:700;color:var(--dark);margin-bottom:8px;display:block;text-transform:uppercase;letter-spacing:.05em}
+.rchips{display:flex;gap:8px}
+.rchip{flex:1;cursor:pointer}
+.rchip input{display:none}
+.rchip span{display:block;text-align:center;padding:8px 4px;border-radius:var(--r-sm);font-size:12px;font-weight:700;color:var(--slate);border:1.5px solid var(--border);background:var(--white);transition:var(--tr)}
+.rchip input:checked+span{color:var(--blue);border-color:var(--blue);background:var(--blue-lt)}
+.adivider{display:flex;align-items:center;gap:10px;margin:12px 0;color:var(--slate);font-size:12px}
+.adivider::before,.adivider::after{content:'';flex:1;height:1px;background:var(--border)}
+.adeco{display:flex;flex-direction:column;gap:12px;flex:0 0 210px}
+.dcard{background:var(--white);border:1px solid var(--border);border-radius:var(--r-sm);padding:13px 14px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-sm);transition:var(--tr)}
+.dcard:hover{border-color:var(--blue)}
+.dico{font-size:20px}
+.dtxt{display:flex;flex-direction:column;gap:2px}
+.dtxt strong{font-size:13px;font-weight:700;color:var(--dark)}
+.dtxt span{font-size:11px;color:var(--slate)}
+.dbig{background:var(--blue);border-radius:var(--r);padding:18px;text-align:center;color:#fff}
+.dbig .bn{font-size:42px;font-weight:900;letter-spacing:-.03em}
+.dbig .bn span{font-size:24px}
+.dbig .bl{font-size:13px;opacity:.85;margin-top:4px}
+.spinner-wrap{display:none;align-items:center}
+.spinner-wrap.show{display:flex}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── APP LAYOUT ── */
+.app-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 24px;background:var(--white);border-bottom:1px solid var(--border);box-shadow:0 2px 12px rgba(0,0,0,.04);position:sticky;top:0;z-index:200}
+.app-nav{display:flex;gap:4px}
+.anav-btn{padding:7px 16px;border-radius:24px;font-size:13px;font-weight:700;color:var(--slate);transition:var(--tr);cursor:pointer;background:none;border:none}
+.anav-btn:hover,.anav-btn.active{background:var(--blue-lt);color:var(--blue)}
+.uavatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#7B61FF);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.uavatar.t{background:linear-gradient(135deg,#10B981,#0062FF)}
+.uavatar.d{background:linear-gradient(135deg,#F59E0B,#EF4444)}
+.uinfo{display:flex;flex-direction:column}
+.uinfo strong{font-size:13px;font-weight:700}
+.uinfo span{font-size:11px;color:var(--slate)}
+.app-body{display:flex;height:calc(100vh - 61px);overflow:hidden}
+.sidebar{width:270px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);overflow-y:auto;padding:18px 14px}
+.sec-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--slate);margin-bottom:10px;padding:0 4px}
+.cls-item{padding:10px 12px;border-radius:var(--r-sm);border:1px solid var(--border);cursor:pointer;transition:var(--tr);background:var(--white);margin-bottom:6px}
+.cls-item:hover,.cls-item.active{border-color:var(--blue);background:var(--blue-lt)}
+.cls-name{font-size:13px;font-weight:700;color:var(--dark)}
+.cls-time{font-size:11px;color:var(--slate);margin-top:2px}
+.sdot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px}
+.mstats{display:flex;gap:8px;margin-bottom:12px}
+.ms{flex:1;text-align:center;padding:10px 4px;border-radius:var(--r-sm)}
+.ms.g{background:var(--green-lt)}.ms.r{background:var(--red-lt)}.ms.gr{background:var(--bg);border:1px solid var(--border)}
+.mn{font-size:22px;font-weight:900;letter-spacing:-.02em}
+.ms.g .mn{color:var(--green)}.ms.r .mn{color:var(--red)}.ms.gr .mn{color:var(--slate)}
+.mlbl{font-size:10px;font-weight:500;color:var(--slate);margin-top:2px}
+.ab-wrap{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:5px}
+.ab{height:100%;background:linear-gradient(90deg,var(--green),#34D399);border-radius:3px;transition:width 1s ease}
+.apct{font-size:12px;font-weight:700;color:var(--green);text-align:right}
+.app-main{flex:1;overflow-y:auto;padding:20px;background:var(--bg)}
+.panel{background:var(--white);border-radius:var(--r);padding:22px;box-shadow:var(--shadow-sm);border:1px solid var(--border)}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.ph h2{font-size:18px;font-weight:800;color:var(--dark)}
+.ph h3{font-size:15px;font-weight:700;color:var(--dark)}
+.cbadge2{background:var(--blue-lt);color:var(--blue);font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px}
+
+/* ── QR SCANNER ── */
+.scan-area{display:flex;flex-direction:column;align-items:center;gap:18px;padding:18px 0}
+.qr-vf{width:230px;height:230px;position:relative;background:rgba(0,98,255,.03);border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.vfc{position:absolute;width:22px;height:22px;border-color:var(--blue);border-style:solid}
+.vfc.tl{top:10px;left:10px;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
+.vfc.tr{top:10px;right:10px;border-width:3px 3px 0 0;border-radius:0 4px 0 0}
+.vfc.bl{bottom:10px;left:10px;border-width:0 0 3px 3px;border-radius:0 0 0 4px}
+.vfc.br{bottom:10px;right:10px;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
+.vfl{position:absolute;left:18px;right:18px;height:2px;background:linear-gradient(90deg,transparent,var(--blue),transparent);animation:scanLine 2.5s ease-in-out infinite;top:18px}
+@keyframes scanLine{0%{top:18px;opacity:1}50%{top:200px;opacity:.8}100%{top:18px;opacity:1}}
+.vft{font-size:13px;color:var(--slate);font-weight:500;text-align:center;padding:0 24px;line-height:1.5}
+.scan-btn{font-size:15px;padding:13px 36px}
+.face-panel{display:none;flex-direction:column;align-items:center;gap:14px;padding:20px 0}
+.face-panel.show{display:flex}
+.fring{width:120px;height:120px;border-radius:50%;border:3px solid var(--blue);display:flex;align-items:center;justify-content:center;animation:ringP 1.5s ease-in-out infinite;position:relative}
+.fring::before{content:'';position:absolute;inset:-8px;border-radius:50%;border:2px solid rgba(0,98,255,.2);animation:ringP 1.5s ease-in-out infinite .3s}
+.fring.lg{width:150px;height:150px}
+@keyframes ringP{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.05);opacity:.8}}
+.fring-inner{width:96px;height:96px;border-radius:50%;background:var(--blue-lt);display:flex;align-items:center;justify-content:center}
+.fring.lg .fring-inner{width:120px;height:120px}
+.fprog{width:200px;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.fprog-bar{height:100%;background:linear-gradient(90deg,var(--blue),#7B61FF);border-radius:3px;width:0%;transition:width .1s linear}
+.res-panel{display:none;flex-direction:column;align-items:center;gap:10px;padding:28px 20px;text-align:center;border-radius:var(--r);margin-top:14px}
+.res-panel.show{display:flex}
+.res-icon{font-size:48px}
+.res-panel h3{font-size:20px;font-weight:800}
+.res-panel p{font-size:14px;color:var(--slate)}
+.rp-ok{background:var(--green-lt);border:1.5px solid var(--green)}
+.rp-ok h3{color:var(--green)}
+.rp-late{background:var(--red-lt);border:1.5px solid var(--red)}
+.rp-late h3{color:var(--red)}
+.sos-badge{background:var(--red);color:#fff;font-size:12px;font-weight:700;padding:8px 16px;border-radius:20px}
+.res-time{font-size:13px;font-weight:700;color:var(--green);background:#fff;padding:6px 14px;border-radius:20px}
+.scan-again-btn{margin-top:8px}
+
+/* ── TEACHER DASHBOARD ── */
+.t-main{padding:0;background:var(--bg)}
+.t-split{display:flex;height:100%}
+.qr-gen{width:340px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);padding:20px;overflow-y:auto}
+.qtbadge{display:flex;align-items:center;gap:6px;background:var(--orange-lt);color:var(--orange);font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px}
+.tdot{width:7px;height:7px;border-radius:50%;background:var(--orange);animation:blink 1s infinite}
+.cls-sel{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;color:var(--dark);background:var(--white);outline:none;margin-bottom:14px;transition:var(--tr)}
+.cls-sel:focus{border-color:var(--blue)}
+.qr-disp-wrap{margin-bottom:14px}
+.qr-disp{position:relative;width:200px;height:200px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;background:var(--bg);border:2px solid var(--border);border-radius:var(--r);overflow:hidden}
+.qr-ref-ov{position:absolute;inset:0;background:rgba(255,255,255,.92);display:none;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:13px;color:var(--blue);font-weight:700}
+.qr-ref-ov.show{display:flex}
+.ref-spin{font-size:32px;animation:spin .8s linear infinite}
+.qr-meta{text-align:center}
+.qr-tok{font-size:12px;color:var(--slate);margin-bottom:6px}
+.qr-tok code{font-family:'Courier New',monospace;background:var(--bg);padding:2px 8px;border-radius:4px;font-size:11px;color:var(--blue);font-weight:700}
+.qr-exp-wrap{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.qr-exp-bar{height:100%;background:linear-gradient(90deg,var(--green),var(--orange),var(--red));border-radius:2px;width:100%;transition:width 1s linear}
+.qr-ctrls{display:flex;gap:10px;margin-bottom:14px}
+.qr-ctrls .btn-primary,.qr-ctrls .btn-ghost{flex:1;border-radius:var(--r-sm);padding:10px;font-size:13px}
+.twarn{background:var(--red-lt);border:1.5px solid var(--red);border-radius:var(--r-sm);padding:12px;font-size:13px;color:var(--red);font-weight:600;display:none;gap:8px;align-items:flex-start}
+.twarn.show{display:flex}
+.btn-proj{width:100%;margin-top:10px;background:linear-gradient(135deg,#0F172A,#1E293B);color:#fff;border-radius:var(--r-sm);padding:11px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid rgba(255,255,255,0.15);transition:var(--tr);cursor:pointer}
+.btn-proj:hover{background:linear-gradient(135deg,#0062FF,#1D4ED8);box-shadow:0 8px 24px rgba(0,98,255,0.3);transform:translateY(-2px)}
+.projector-modal{position:fixed;inset:0;background:#090D16;color:#fff;z-index:99999;display:flex;flex-direction:column;padding:30px 48px;overflow-y:auto;box-sizing:border-box}
+.projector-modal.hidden{display:none !important}
+.projector-header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.12);padding-bottom:18px;margin-bottom:24px}
+.proj-badge{display:inline-block;background:rgba(0,98,255,0.25);color:#60A5FA;border:1px solid rgba(96,165,250,0.3);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:800;letter-spacing:0.08em;margin-bottom:8px}
+.projector-title-block h1{font-size:28px;font-weight:900;color:#fff;letter-spacing:-0.02em;margin:0 0 6px 0}
+.projector-title-block p{font-size:14px;color:#94A3B8;margin:0}
+.projector-actions{display:flex;align-items:center;gap:16px}
+.proj-timer-card{display:flex;align-items:baseline;gap:4px;background:rgba(255,255,255,0.06);border:1.5px solid rgba(0,98,255,0.4);padding:8px 18px;border-radius:14px}
+.proj-timer-lbl{font-size:10px;color:#94A3B8;font-weight:700;margin-right:4px}
+.proj-timer-card strong{font-size:32px;font-weight:900;color:#60A5FA;font-family:monospace}
+.proj-timer-sec{font-size:13px;color:#94A3B8}
+.btn-proj-close{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;width:42px;height:42px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--tr)}
+.btn-proj-close:hover{background:#EF4444;border-color:#EF4444;transform:scale(1.08)}
+.projector-body{display:flex;gap:48px;align-items:center;justify-content:center;flex:1}
+.projector-qr-card{background:#fff;border-radius:28px;padding:26px;box-shadow:0 25px 60px rgba(0,98,255,0.25);display:flex;flex-direction:column;align-items:center;color:#0F172A}
+.proj-qr-wrapper{background:#F8FAFC;padding:12px;border-radius:20px;border:2px dashed #CBD5E1;display:flex;align-items:center;justify-content:center}
+.proj-token-display{margin-top:14px;font-size:13px;color:#64748B;display:flex;align-items:center;gap:6px}
+.proj-token-display code{font-family:monospace;font-weight:800;color:#0062FF;font-size:14px}
+.proj-progress-wrap{width:100%;height:8px;background:#E2E8F0;border-radius:4px;overflow:hidden;margin-top:12px}
+.proj-progress-bar{height:100%;background:linear-gradient(90deg,#10B981,#0062FF);border-radius:4px;width:100%;transition:width 1s linear}
+.projector-live-stats{display:flex;flex-direction:column;gap:14px;max-width:440px}
+.proj-stat-box{padding:14px 18px;border-radius:16px;display:flex;align-items:center;gap:16px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04)}
+.proj-stat-box.green{border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.08)}
+.proj-stat-box.red{border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.08)}
+.proj-stat-box.blue{border-color:rgba(0,98,255,0.3);background:rgba(0,98,255,0.08)}
+.proj-stat-num{font-size:30px;font-weight:900;font-family:monospace}
+.proj-stat-box.green .proj-stat-num{color:#34D399}
+.proj-stat-box.red .proj-stat-num{color:#F87171}
+.proj-stat-box.blue .proj-stat-num{color:#60A5FA}
+.proj-stat-lbl{font-size:13px;font-weight:600;color:#E2E8F0}
+.proj-instruction-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);padding:16px 20px;border-radius:16px}
+.proj-instruction-card h3{font-size:14px;font-weight:800;color:#fff;margin:0 0 8px 0}
+.proj-instruction-card ol{padding-left:18px;margin:0;font-size:12px;line-height:1.6;color:#94A3B8}
+.proj-instruction-card strong{color:#fff}
+.att-panel{flex:1;overflow-y:auto;padding:20px;background:var(--bg)}
+.live-badge{display:flex;align-items:center;gap:5px;background:var(--red-lt);color:var(--red);font-size:11px;font-weight:800;padding:4px 10px;border-radius:12px;letter-spacing:.06em}
+.ldot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:blink .8s ease-in-out infinite}
+.sum-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.sc{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px}
+.sc.g{background:var(--green-lt);color:var(--green)}.sc.r{background:var(--red-lt);color:var(--red)}
+.sc.b{background:var(--blue-lt);color:var(--blue)}.sc.gr{background:var(--bg);color:var(--slate);border:1px solid var(--border)}
+.srch-inp{width:100%;padding:9px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;color:var(--dark);background:var(--white);outline:none;margin-bottom:12px;transition:var(--tr)}
+.srch-inp:focus{border-color:var(--blue)}
+.stu-list{display:flex;flex-direction:column;gap:5px;margin-bottom:16px;max-height:300px;overflow-y:auto}
+.srow{display:flex;align-items:center;gap:10px;background:var(--white);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;transition:var(--tr)}
+.srow:hover{border-color:var(--blue-mid)}
+.srow.present{border-left:4px solid var(--green)}
+.srow.late{border-left:4px solid var(--red)}
+.srow.excused{border-left:4px solid var(--blue)}
+.srow.absent{border-left:4px solid #94A3B8;opacity:.7}
+.sav{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0}
+.sinfo{flex:1}
+.sname{font-size:13px;font-weight:700}
+.sid{font-size:11px;color:var(--slate)}
+.sbadge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;white-space:nowrap}
+.sbadge.present{background:var(--green-lt);color:var(--green)}
+.sbadge.late{background:var(--red-lt);color:var(--red)}
+.sbadge.excused{background:var(--blue-lt);color:var(--blue)}
+.sbadge.absent{background:var(--bg);color:#94A3B8;border:1px solid var(--border)}
+.stime{font-size:11px;color:var(--slate);text-align:right}
+.sos-log{background:var(--white);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px}
+.slt{font-size:12px;font-weight:700;color:var(--dark);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em}
+.sos-entries{display:flex;flex-direction:column;gap:5px}
+.sos-e{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--slate);padding:8px 10px;background:var(--red-lt);border-radius:var(--r-xs);border-left:3px solid var(--red);animation:slideIn .4s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.sos-e strong{color:var(--red);font-weight:700}
+.sost{font-size:10px;color:#94A3B8;margin-left:auto;white-space:nowrap}
+
+/* ── DEAN DASHBOARD ── */
+.d-overview{max-width:1200px}
+.ov-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.oc{background:var(--white);border-radius:var(--r);padding:18px 20px;border:1px solid var(--border);box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:7px;transition:var(--tr);position:relative;overflow:hidden}
+.oc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 var(--r) var(--r)}
+.oc.b::after{background:var(--blue)}.oc.g::after{background:var(--green)}.oc.r::after{background:var(--red)}.oc.o::after{background:var(--orange)}
+.oc:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+.ov-ico{font-size:24px}.ov-val{font-size:30px;font-weight:900;letter-spacing:-.03em}
+.oc.b .ov-val{color:var(--blue)}.oc.g .ov-val{color:var(--green)}.oc.r .ov-val{color:var(--red)}.oc.o .ov-val{color:var(--orange)}
+.ov-lbl{font-size:12px;color:var(--slate);font-weight:500}
+.d-panels{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.dp{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--shadow-sm)}
+.a-list,.t-s-list{display:flex;flex-direction:column;gap:7px}
+.al{padding:11px 13px;border-radius:var(--r-sm);border-left:4px solid var(--red);background:var(--red-lt);font-size:13px;animation:slideIn .4s ease}
+.al strong{color:var(--red);display:block;font-size:12px;margin-bottom:2px}
+.al span{color:var(--dark)}
+.al-time{font-size:10px;color:#94A3B8;display:block;margin-top:3px}
+.trow{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--white)}
+.tsdot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.tsdot.on{background:var(--green);box-shadow:0 0 6px var(--green)}.tsdot.off{background:#94A3B8}.tsdot.sos{background:var(--red);animation:blink .6s infinite}
+.tri{flex:1}.trn{font-size:13px;font-weight:700}.trc{font-size:11px;color:var(--slate)}
+.trb{font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px}
+.trb.on{background:var(--green-lt);color:var(--green)}.trb.off{background:var(--bg);color:#94A3B8;border:1px solid var(--border)}.trb.sos{background:var(--red-lt);color:var(--red)}
+.gb-sec{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--shadow-sm)}
+.gbars{display:flex;flex-direction:column;gap:12px;margin-top:8px}
+.gbr{display:flex;align-items:center;gap:10px}
+.glbl{font-size:13px;font-weight:700;width:78px;flex-shrink:0}
+.gbw{flex:1;height:10px;background:var(--border);border-radius:5px;overflow:hidden}
+.gbb{height:100%;border-radius:5px;transition:width 1.5s cubic-bezier(.4,0,.2,1)}
+.gpct{font-size:12px;font-weight:700;width:38px;text-align:right}
+
+/* ── TOAST ── */
+.toast-c{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:7px;z-index:9999}
+.toast{display:flex;align-items:flex-start;gap:10px;background:var(--dark);color:#fff;padding:13px 16px;border-radius:var(--r-sm);font-size:13px;font-weight:500;max-width:320px;box-shadow:0 8px 24px rgba(0,0,0,.18);animation:toastIn .4s cubic-bezier(.4,0,.2,1)}
+.toast.ok{border-left:4px solid var(--green)}.toast.err{border-left:4px solid var(--red)}.toast.inf{border-left:4px solid var(--blue)}.toast.wrn{border-left:4px solid var(--orange)}
+@keyframes toastIn{from{opacity:0;transform:translateX(24px) scale(.95)}to{opacity:1;transform:translateX(0) scale(1)}}
+.tst-ico{font-size:18px;flex-shrink:0}.tst-b strong{display:block;font-weight:700;font-size:13px;margin-bottom:2px}.tst-b span{font-size:12px;opacity:.8}
+
+/* ── MODAL ── */
+.moverlay{position:fixed;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(8px);z-index:9000;display:flex;align-items:center;justify-content:center;animation:fo .3s ease}
+.moverlay.hide{display:none}
+@keyframes fo{from{opacity:0}to{opacity:1}}
+.modal{text-align:center;padding:36px 32px;max-width:360px;width:90%;animation:mi .4s cubic-bezier(.34,1.56,.64,1)}
+@keyframes mi{from{opacity:0;transform:scale(.85) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal h3{font-size:20px;font-weight:800;margin-bottom:18px}
+.modal p{font-size:14px;color:var(--slate);margin:10px 0}
+
+/* ── UTIL ── */
+.hide{display:none!important}
+.app-user{display:flex;align-items:center;gap:10px}
+
+/* ── S-KURATOR & S-ATA-ANA STYLES ── */
+.curator-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-top: 14px; }
+.notes-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+.notes-table th { background: var(--bg); text-align: left; padding: 9px 12px; color: var(--slate); font-weight: 700; border-bottom: 1.5px solid var(--border); font-size: 11px; text-transform: uppercase; }
+.notes-table td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.parent-child-card { background: linear-gradient(135deg, #EFF4FF, #DBEAFE); border: 1.5px solid #BFDBFE; border-radius: 16px; padding: 20px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.btn-approve { background: var(--green); color: #fff; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: var(--tr); }
+.btn-approve:hover { background: #059669; }
+.btn-reject { background: var(--red); color: #fff; padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: var(--tr); }
+.btn-reject:hover { background: #DC2626; }
+.note-badge { padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-block; }
+.note-badge.pending { background: #FEF3C7; color: #D97706; }
+.note-badge.approved { background: #DCFCE7; color: #16A34A; }
+.note-badge.rejected { background: #FEE2E2; color: #DC2626; }
+
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     LANDING PAGE
+════════════════════════════════════════════ -->
+<div id="pg-landing" class="page active">
+  <!-- Blue blob -->
+  <div class="blue-blob">
+    <svg class="blob-svg" viewBox="0 0 700 600" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <path d="M700,0 L700,600 L300,600 Q480,440 460,220 Q440,40 700,0 Z" fill="#0062FF"/>
+      <path d="M700,0 L700,600 L360,600 Q540,420 520,200 Q500,20 700,0 Z" fill="rgba(255,255,255,.06)"/>
+    </svg>
+    <div class="blob-actions">
+      <div class="lang-sw">
+        <button class="lang-btn active" onclick="setLang('kk')">ҚАЗ</button>
+        <span class="lang-div">|</span>
+        <button class="lang-btn" onclick="setLang('ru')">РУС</button>
+        <span class="lang-div">|</span>
+        <button class="lang-btn" onclick="setLang('en')">ENG</button>
+      </div>
+      <button class="blob-cta btn" onclick="goAuth()" data-i="try_free">Тегін сынап көру</button>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo" onclick="goLanding()">
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <rect width="36" height="36" rx="10" fill="#0062FF"/>
+        <rect x="8" y="8" width="8" height="8" rx="1.5" fill="white"/>
+        <rect x="20" y="8" width="8" height="8" rx="1.5" fill="white"/>
+        <rect x="8" y="20" width="8" height="8" rx="1.5" fill="white"/>
+        <rect x="22" y="22" width="4" height="4" rx="0.5" fill="white"/>
+        <line x1="7" y1="18" x2="29" y2="18" stroke="#00CFFF" stroke-width="1.5" stroke-linecap="round" class="ql"/>
+      </svg>
+      <span class="logo-text">Smart<span class="logo-accent">Attend</span></span>
+    </div>
+    <nav class="nav">
+      <a href="#" class="nav-link" data-i="nav_about">Жүйе туралы</a>
+      <a href="#" class="nav-link" data-i="nav_feat">Мүмкіндіктер</a>
+      <a href="#" class="nav-link" data-i="nav_price">Тариф</a>
+      <a href="#" class="nav-link" data-i="nav_contact">Байланыс</a>
+      <a href="javascript:void(0)" onclick="openCampusMapModal()" class="nav-link" style="color:var(--blue);font-weight:700">🗺️ Карта кампуса</a>
+      <a href="javascript:void(0)" onclick="openStudentProfileModal()" class="nav-link" style="color:var(--dark);font-weight:600">👤 Студент Профилі</a>
+    </nav>
+    <div class="hdr-right">
+      <button class="btn btn-ghost" onclick="goAuth()" data-i="login">Кіру</button>
+      <button class="btn btn-primary" onclick="goAuth()" data-i="register">Тіркелу</button>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <!-- Left illustration -->
+    <div class="hero-illus illus-l">
+      <svg width="210" height="290" viewBox="0 0 210 290" fill="none">
+        <!-- Whiteboard -->
+        <rect x="5" y="50" width="70" height="95" rx="6" fill="white" stroke="#CBD5E1" stroke-width="1.5"/>
+        <rect x="11" y="56" width="58" height="83" rx="4" fill="#F8FAFC"/>
+        <text x="40" y="72" text-anchor="middle" font-size="8" fill="#0062FF" font-weight="700" font-family="Inter,sans-serif">ЖУРНАЛ</text>
+        <line x1="15" y1="80" x2="63" y2="80" stroke="#0062FF" stroke-width="1.5" opacity=".4"/>
+        <text x="17" y="94" font-size="8" fill="#64748B" font-family="Inter,sans-serif">Айдар С.</text>
+        <circle cx="62" cy="91" r="5" fill="#10B981"/>
+        <text x="17" y="107" font-size="8" fill="#64748B" font-family="Inter,sans-serif">Нұрай Б.</text>
+        <circle cx="62" cy="104" r="5" fill="#10B981"/>
+        <text x="17" y="120" font-size="8" fill="#64748B" font-family="Inter,sans-serif">Марат К.</text>
+        <circle cx="62" cy="117" r="5" fill="#EF4444"/>
+        <text x="17" y="133" font-size="8" fill="#64748B" font-family="Inter,sans-serif">Зарина А.</text>
+        <circle cx="62" cy="130" r="5" fill="#10B981"/>
+        <!-- Teacher -->
+        <circle cx="140" cy="48" r="22" fill="#EFF4FF" stroke="#0062FF" stroke-width="1.5"/>
+        <text x="140" y="56" text-anchor="middle" font-size="20">👨‍🏫</text>
+        <rect x="120" y="72" width="40" height="55" rx="8" fill="#0062FF" opacity=".1"/>
+        <!-- Phone/QR device -->
+        <rect x="158" y="82" width="34" height="46" rx="5" fill="white" stroke="#0062FF" stroke-width="1.5"/>
+        <rect x="162" y="87" width="26" height="26" rx="2" fill="#EFF4FF"/>
+        <rect x="164" y="89" width="7" height="7" rx="1" fill="#0062FF"/>
+        <rect x="175" y="89" width="7" height="7" rx="1" fill="#0062FF"/>
+        <rect x="164" y="100" width="7" height="7" rx="1" fill="#0062FF"/>
+        <rect x="166" y="91" width="2.5" height="2.5" fill="white"/>
+        <rect x="177" y="91" width="2.5" height="2.5" fill="white"/>
+        <rect x="166" y="102" width="2.5" height="2.5" fill="white"/>
+        <line x1="162" y1="108" x2="188" y2="108" stroke="#10B981" stroke-width="2" stroke-dasharray="3 2"/>
+        <!-- SOS badge -->
+        <circle cx="198" cy="80" r="11" fill="#EF4444"/>
+        <text x="198" y="84" text-anchor="middle" font-size="7" fill="white" font-weight="700" font-family="Inter,sans-serif">SOS</text>
+        <!-- Legs -->
+        <rect x="115" y="127" width="11" height="44" rx="4" fill="#94A3B8" opacity=".5"/>
+        <rect x="133" y="127" width="11" height="44" rx="4" fill="#94A3B8" opacity=".5"/>
+      </svg>
+    </div>
+
+    <!-- Floating Card -->
+    <div class="card" id="lcard">
+      <div class="cbadge">
+        <span class="bdot"></span>
+        <span data-i="badge_live">Жүйе белсенді</span>
+      </div>
+      <div class="clogo">
+        <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+          <rect width="52" height="52" rx="14" fill="#EFF4FF"/>
+          <rect x="11" y="11" width="12" height="12" rx="2" fill="#0062FF"/>
+          <rect x="29" y="11" width="12" height="12" rx="2" fill="#0062FF"/>
+          <rect x="11" y="29" width="12" height="12" rx="2" fill="#0062FF"/>
+          <rect x="31" y="31" width="6" height="6" rx="1" fill="#0062FF"/>
+          <rect x="29" y="29" width="5" height="5" rx="1" fill="#0062FF" opacity=".4"/>
+          <line x1="10" y1="26" x2="42" y2="26" stroke="#00CFFF" stroke-width="1.5" stroke-linecap="round" class="ql"/>
+        </svg>
+      </div>
+      <h1 class="ctitle" data-i="hero_title">Ақылды Қатысу Жүйесі</h1>
+      <p class="csub" data-i="hero_sub">QR + Face ID + Жедел хабарлама</p>
+      <div class="cstats">
+        <div class="sitem">
+          <div class="snum">15<span data-i="sec">сек</span></div>
+          <div class="slbl" data-i="stat_qr">QR жаңарту</div>
+        </div>
+        <div class="sdiv"></div>
+        <div class="sitem">
+          <div class="snum">5<span data-i="min">мин</span></div>
+          <div class="slbl" data-i="stat_late">Кешігу шегі</div>
+        </div>
+        <div class="sdiv"></div>
+        <div class="sitem">
+          <div class="snum">3<span data-i="lang_s">тіл</span></div>
+          <div class="slbl" data-i="stat_lang">Тіл қолдауы</div>
+        </div>
+      </div>
+      <div class="croles">
+        <button class="rbtn active" onclick="pickRole('student',this)" data-i="role_student">🎓 Студент</button>
+        <button class="rbtn" onclick="pickRole('teacher',this)" data-i="role_teacher">👨‍🏫 Мұғалім</button>
+        <button class="rbtn" onclick="pickRole('dean',this)" data-i="role_dean">🏛️ Деканат</button>
+      </div>
+      <button class="btn btn-primary full pulse" onclick="goAuth()" data-i="get_started">Жүйеге кіру →</button>
+      <p class="cnote" data-i="demo_note">Демо режим — нақты деректерсіз сынауға болады</p>
+    </div>
+
+    <!-- Right illustration -->
+    <div class="hero-illus illus-r">
+      <svg width="210" height="290" viewBox="0 0 210 290" fill="none">
+        <circle cx="105" cy="48" r="22" fill="#EFF4FF" stroke="#0062FF" stroke-width="1.5"/>
+        <text x="105" y="56" text-anchor="middle" font-size="20">🧑‍🎓</text>
+        <rect x="85" y="74" width="40" height="55" rx="8" fill="#10B981" opacity=".1"/>
+        <rect x="63" y="82" width="28" height="50" rx="6" fill="white" stroke="#0062FF" stroke-width="1.5"/>
+        <rect x="67" y="87" width="20" height="20" rx="2" fill="#EFF4FF"/>
+        <rect x="69" y="89" width="5.5" height="5.5" rx="1" fill="#0062FF"/>
+        <rect x="78" y="89" width="5.5" height="5.5" rx="1" fill="#0062FF"/>
+        <rect x="69" y="98" width="5.5" height="5.5" rx="1" fill="#0062FF"/>
+        <rect x="71" y="91" width="2" height="2" fill="white"/>
+        <rect x="80" y="91" width="2" height="2" fill="white"/>
+        <rect x="71" y="100" width="2" height="2" fill="white"/>
+        <rect x="67" y="111" width="20" height="4" rx="2" fill="#10B981"/>
+        <!-- Status badge -->
+        <rect x="45" y="138" width="90" height="22" rx="8" fill="#DCFCE7"/>
+        <circle cx="57" cy="149" r="5" fill="#10B981"/>
+        <text x="67" y="153" font-size="8" fill="#10B981" font-weight="700" font-family="Inter,sans-serif">Уақытында ✓</text>
+        <!-- Legs -->
+        <rect x="100" y="129" width="10" height="42" rx="4" fill="#94A3B8" opacity=".5"/>
+        <rect x="115" y="129" width="10" height="42" rx="4" fill="#94A3B8" opacity=".5"/>
+        <!-- Notification bubble -->
+        <rect x="125" y="55" width="76" height="40" rx="10" fill="white" stroke="#E2E8F0" stroke-width="1.5"/>
+        <circle cx="140" cy="70" r="7" fill="#10B981" opacity=".2"/>
+        <text x="140" y="74" text-anchor="middle" font-size="9" fill="#10B981">✓</text>
+        <text x="153" y="67" font-size="8" fill="#0F172A" font-weight="700" font-family="Inter,sans-serif">Тіркелді</text>
+        <text x="153" y="78" font-size="7" fill="#64748B" font-family="Inter,sans-serif">14:32 • Face ID ✓</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- Feature tags -->
+  <div class="ftags">
+    <div class="ftag"><span>🔐</span><span data-i="feat_qr">Динамикалық QR</span></div>
+    <div class="ftag"><span>👁️</span><span data-i="feat_face">Face ID биометрия</span></div>
+    <div class="ftag"><span>📱</span><span data-i="feat_notif">Жедел хабарлама</span></div>
+    <div class="ftag"><span>📊</span><span data-i="feat_stat">Нақты уақыт статистика</span></div>
+    <div class="ftag"><span>🏛️</span><span data-i="feat_dean">Деканат бақылауы</span></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     AUTH PAGE
+════════════════════════════════════════════ -->
+<div id="pg-auth" class="page">
+  <div class="blue-blob">
+    <svg class="blob-svg" viewBox="0 0 700 600" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <path d="M700,0 L700,600 L300,600 Q480,440 460,220 Q440,40 700,0 Z" fill="#0062FF"/>
+      <path d="M700,0 L700,600 L360,600 Q540,420 520,200 Q500,20 700,0 Z" fill="rgba(255,255,255,.06)"/>
+    </svg>
+    <div class="blob-actions">
+      <div class="lang-sw">
+        <button class="lang-btn active" onclick="setLang('kk')">ҚАЗ</button>
+        <span class="lang-div">|</span>
+        <button class="lang-btn" onclick="setLang('ru')">РУС</button>
+        <span class="lang-div">|</span>
+        <button class="lang-btn" onclick="setLang('en')">ENG</button>
+      </div>
+      <button class="blob-cta btn" onclick="goLanding()">← <span data-i="back">Артқа</span></button>
+    </div>
+  </div>
+  <header class="header">
+    <div class="logo" onclick="goLanding()">
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none"><rect width="36" height="36" rx="10" fill="#0062FF"/><rect x="8" y="8" width="8" height="8" rx="1.5" fill="white"/><rect x="20" y="8" width="8" height="8" rx="1.5" fill="white"/><rect x="8" y="20" width="8" height="8" rx="1.5" fill="white"/><rect x="22" y="22" width="4" height="4" rx="0.5" fill="white"/></svg>
+      <span class="logo-text">Smart<span class="logo-accent">Attend</span></span>
+    </div>
+  </header>
+  <div class="auth-main">
+    <!-- Left deco -->
+    <div class="adeco">
+      <div class="dcard"><div class="dico">🔐</div><div class="dtxt"><strong data-i="d_secure">Қауіпсіз жүйе</strong><span>AES-256 шифрлау</span></div></div>
+      <div class="dcard"><div class="dico">👁️</div><div class="dtxt"><strong>Face ID</strong><span data-i="d_bio">Биометриялық тексеру</span></div></div>
+      <div class="dcard"><div class="dico">📡</div><div class="dtxt"><strong data-i="d_rt">Нақты уақыт</strong><span data-i="d_sync">Синхронды деректер</span></div></div>
+    </div>
+    <!-- Auth Card -->
+    <div class="card auth-card">
+      <div class="atabs">
+        <button class="atab active" id="tab-in" onclick="authTab('in');" data-i="login">Кіру</button>
+        <button class="atab" id="tab-reg" onclick="authTab('reg');" data-i="register">Тіркелу (Тек Студенттер)</button>
+      </div>
+      <!-- Login -->
+      <div id="form-in">
+        <p class="asub" data-i="auth_sub">SmartAttend жүйесіне кіру</p>
+        
+        <!-- Quick Demo Switcher (5 Roles) -->
+        <div style="background:#EFF4FF;border:1.5px solid #BFDBFE;border-radius:12px;padding:10px 12px;margin-bottom:14px;">
+          <div style="font-size:10px;font-weight:800;color:#0062FF;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">⚡ Тесттік аккаунтты таңдау (RBAC):</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;">
+            <button type="button" class="btn" style="flex:1 1 45%;background:#fff;border:1px solid #DBEAFE;padding:6px 4px;font-size:11px;font-weight:700;border-radius:6px;color:#0F172A;" onclick="fillDemo('student')">🎓 Студент: Дінмұхаммед</button>
+            <button type="button" class="btn" style="flex:1 1 45%;background:#fff;border:1px solid #DBEAFE;padding:6px 4px;font-size:11px;font-weight:700;border-radius:6px;color:#0F172A;" onclick="fillDemo('curator')">👩‍🏫 Куратор: Арай Т.</button>
+            <button type="button" class="btn" style="flex:1 1 45%;background:#fff;border:1px solid #DBEAFE;padding:6px 4px;font-size:11px;font-weight:700;border-radius:6px;color:#0F172A;" onclick="fillDemo('teacher')">👨‍🏫 Мұғалім: Калниязов</button>
+            <button type="button" class="btn" style="flex:1 1 45%;background:#fff;border:1px solid #DBEAFE;padding:6px 4px;font-size:11px;font-weight:700;border-radius:6px;color:#0F172A;" onclick="fillDemo('parent')">👨‍👩‍👧 Ата-Ана: S-Ata-Ana</button>
+            <button type="button" class="btn" style="flex:1 1 100%;background:#0F172A;border:1px solid #0F172A;padding:6px 4px;font-size:11px;font-weight:700;border-radius:6px;color:#fff;" onclick="fillDemo('dean')">🏛️ Деканат: Барлық колледж</button>
+          </div>
+        </div>
+
+        <div class="fgrp">
+          <label data-i="email">Электрондық пошта</label>
+          <div class="inpw"><span class="iico">✉️</span><input type="email" id="l-email" placeholder="example@university.kz" value="student@smartattend.edu.kz"/></div>
+        </div>
+        <div class="fgrp">
+          <label data-i="password">Құпия сөз</label>
+          <div class="inpw"><span class="iico">🔒</span><input type="password" id="l-pwd" placeholder="••••••••" value="student2026"/><button class="tpwd" onclick="togglePwd('l-pwd',this)">👁</button></div>
+        </div>
+        <div class="frow">
+          <label class="cklbl"><input type="checkbox" checked/> <span data-i="remember">Есте сақта</span></label>
+          <a href="#" class="lnk" data-i="forgot">Ұмыттым</a>
+        </div>
+        <div class="rsg" style="margin-bottom:18px">
+          <label data-i="sel_role">Рөліңізді таңдаңыз (RBAC тексеру):</label>
+          <div class="rchips">
+            <label class="rchip"><input type="radio" name="role" value="student" checked id="role-r-student"/><span>🎓 <span data-i="role_student">Студент</span></span></label>
+            <label class="rchip"><input type="radio" name="role" value="teacher" id="role-r-teacher"/><span>👨‍🏫 <span data-i="role_teacher">Мұғалім</span></span></label>
+            <label class="rchip"><input type="radio" name="role" value="dean" id="role-r-dean"/><span>🏛️ <span data-i="role_dean">Деканат</span></span></label>
+          </div>
+        </div>
+        <button class="btn btn-primary full" id="login-btn" onclick="handleLogin()">
+          <span id="login-txt" data-i="login_btn">Жүйеге кіру</span>
+          <div class="spinner-wrap" id="login-spin"><div class="spinner"></div></div>
+        </button>
+        <div class="adivider"><span data-i="or">немесе ресми аккаунтпен</span></div>
+        
+        <!-- Google Identity Services (OAuth 2.0 / OpenID Connect) Button -->
+        <div id="g_id_onload"
+             data-client_id="919869001926-svi79qrh22284ms91ssib46srichbfbf.apps.googleusercontent.com"
+             data-context="signin"
+             data-ux_mode="popup"
+             data-callback="handleCredentialResponse"
+             data-auto_prompt="false">
+        </div>
+        <div style="display:flex;justify-content:center;margin-bottom:10px;width:100%;">
+          <div class="g_id_signin"
+               data-type="standard"
+               data-shape="rectangular"
+               data-theme="outline"
+               data-text="signin_with"
+               data-size="large"
+               data-logo_alignment="left"
+               data-width="344">
+          </div>
+        </div>
+
+        <button class="btn-social" onclick="faceLogin()">👁️ <span data-i="face_login">Face ID арқылы кіру</span></button>
+      </div>
+      <!-- Register -->
+      <div id="form-reg" class="hide">
+        <p class="asub" data-i="reg_sub">Жаңа студентті тіркеу</p>
+        
+        <!-- RBAC notice -->
+        <div style="background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:8px;padding:10px;margin-bottom:14px;font-size:11px;color:#92400E;line-height:1.4;">
+          <strong>🔒 Қауіпсіздік саясаты (RBAC):</strong><br/>
+          Өздігінен тіркелу тек <b>Студенттерге</b> арналған. Оқытушылар мен декандар аккаунттары орталықтандырылған реестр арқылы ғана ашылады.
+        </div>
+
+        <div class="fgrp"><label data-i="fullname">Толық аты-жөні</label><div class="inpw"><span class="iico">👤</span><input type="text" id="reg-name" placeholder="Айдар Сейітов"/></div></div>
+        <div class="fgrp"><label data-i="stu_id">Студент ID (ЖСН / ИИН)</label><div class="inpw"><span class="iico">🆔</span><input type="text" id="reg-id" placeholder="210145 / STU-2024-001"/></div></div>
+        <div class="fgrp"><label data-i="email">Электрондық пошта</label><div class="inpw"><span class="iico">✉️</span><input type="email" id="reg-email" placeholder="student@smartattend.edu.kz"/></div></div>
+        <div class="fgrp"><label data-i="password">Құпия сөз</label><div class="inpw"><span class="iico">🔒</span><input type="password" id="reg-pwd" placeholder="••••••••"/></div></div>
+        <button class="btn btn-primary full" onclick="handleRegister()" data-i="create_acc">Студент ретінде тіркелу</button>
+      </div>
+    </div>
+    <!-- Right deco -->
+    <div class="adeco">
+      <div class="dbig"><div class="bn">98<span>%</span></div><div class="bl" data-i="accuracy">Дәлдік деңгейі</div></div>
+      <div class="dcard"><div class="dico">📱</div><div class="dtxt"><strong data-i="d_tg">Telegram хабарлама</strong><span data-i="d_sos">Жедел SOS-хабар</span></div></div>
+      <div class="dcard"><div class="dico">⏱️</div><div class="dtxt"><strong>15 сек</strong><span data-i="d_qrr">QR автожаңарту</span></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     STUDENT DASHBOARD
+════════════════════════════════════════════ -->
+<div id="pg-student" class="page">
+  <div class="app-hdr">
+    <div class="logo" onclick="goLanding()">
+      <svg width="28" height="28" viewBox="0 0 36 36" fill="none"><rect width="36" height="36" rx="10" fill="#0062FF"/><rect x="8" y="8" width="8" height="8" rx="1.5" fill="white"/><rect x="20" y="8" width="8" height="8" rx="1.5" fill="white"/><rect x="8" y="20" width="8" height="8" rx="1.5" fill="white"/><rect x="22" y="22" width="4" height="4" rx="0.5" fill="white"/></svg>
+      <span class="logo-text" style="font-size:17px">Smart<span class="logo-accent">Attend</span></span>
+    </div>
+    <div class="app-nav">
+      <button class="anav-btn active" data-i="nav_home">🏠 Басты</button>
+      <button class="anav-btn" onclick="stuTab('history')" data-i="nav_hist">📋 Тарих</button>
+      <button class="anav-btn" onclick="stuTab('stats')" data-i="nav_stats">📊 Статистика</button>
+      <button class="anav-btn" onclick="openCampusMapModal()"><span style="font-size:15px">🗺️</span> Карта</button>
+      <button class="anav-btn" onclick="openStudentProfileModal()"><span style="font-size:15px">👤</span> Профиль</button>
+    </div>
+    <div class="app-user">
+      <div class="uavatar">АС</div>
+      <div class="uinfo"><strong>Айдар Сейіт</strong><span>STU-2024-001</span></div>
+      <button class="btn btn-ghost sm" onclick="goLanding()">↩ <span data-i="exit">Шығу</span></button>
+    </div>
+  </div>
+  <div class="app-body">
+    <aside class="sidebar">
+      <div style="margin-bottom:22px">
+        <div class="sec-title" data-i="today_cls">Бүгінгі сабақтар</div>
+        <div id="stu-cls-list"></div>
+      </div>
+      <div>
+        <div class="sec-title" data-i="my_stats">Менің статистикам</div>
+        <div class="mstats">
+          <div class="ms g"><div class="mn">12</div><div class="mlbl" data-i="present">Қатысты</div></div>
+          <div class="ms r"><div class="mn">3</div><div class="mlbl" data-i="late">Кешікті</div></div>
+          <div class="ms gr"><div class="mn">1</div><div class="mlbl" data-i="absent">Келмеді</div></div>
+        </div>
+        <div class="ab-wrap"><div class="ab" style="width:75%"></div></div>
+        <div class="apct">75%</div>
+      </div>
+    </aside>
+    <main class="app-main">
+      <div class="panel">
+        <div class="ph">
+          <h2 data-i="scan_qr">QR Сканерлеу</h2>
+          <div class="cbadge2" id="cur-cls">Информатика — 14:00</div>
+        </div>
+        <!-- Scanner area -->
+        <div id="scan-area" class="scan-area">
+          <div class="qr-vf" id="qr-vf">
+            <div class="vfc tl"></div><div class="vfc tr"></div>
+            <div class="vfc bl"></div><div class="vfc br"></div>
+            <div class="vfl"></div>
+            <div class="vft" id="vf-txt" data-i="aim_qr">QR кодты рамкаға түсіріңіз</div>
+          </div>
+          <button class="btn btn-primary scan-btn" id="scan-btn" onclick="startScan()">
+            📷 <span data-i="start_scan">Сканерлеуді бастау</span>
+          </button>
+        </div>
+        <!-- Face verify -->
+        <div class="face-panel" id="face-panel">
+          <div class="fring"><div class="fring-inner"><span style="font-size:2.5rem">👤</span></div></div>
+          <p style="font-size:14px;color:var(--slate);font-weight:500" data-i="face_look">Камераға тура қараңыз...</p>
+          <div class="fprog"><div class="fprog-bar" id="face-bar"></div></div>
+        </div>
+        <!-- Result OK -->
+        <div class="res-panel rp-ok" id="res-ok">
+          <div class="res-icon">✅</div>
+          <h3 data-i="ok_title">Қатысу тіркелді!</h3>
+          <p data-i="ok_msg">Сіз уақытында тіркелдіңіз. Жақсы оқулар!</p>
+          <div class="res-time" id="res-time">14:32:05</div>
+          <button class="btn btn-ghost scan-again-btn" onclick="resetScan()" data-i="scan_again">Қайта сканерлеу</button>
+        </div>
+        <!-- Result Late -->
+        <div class="res-panel rp-late" id="res-late">
+          <div class="res-icon">⚠️</div>
+          <h3 data-i="late_title">Себепсіз кешіктіңіз!</h3>
+          <p id="late-msg">+12 мин кешікті</p>
+          <div class="sos-badge" data-i="sos_sent">📡 Деканат пен кураторға хабарлама жіберілді</div>
+          <button class="btn btn-ghost scan-again-btn" onclick="resetScan()" data-i="scan_again">Қайта сканерлеу</button>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     TEACHER DASHBOARD
+════════════════════════════════════════════ -->
+<div id="pg-teacher" class="page">
+  <div class="app-hdr">
+    <div class="logo" onclick="goLanding()">
+      <svg width="28" height="28" viewBox="0 0 36 36" fill="none"><rect width="36" height="36" rx="10" fill="#0062FF"/><rect x="8" y="8" width="8" height="8" rx="1.5" fill="white"/><rect x="20" y="8" width="8" height="8" rx="1.5" fill="white"/><rect x="8" y="20" width="8" height="8" rx="1.5" fill="white"/><rect x="22" y="22" width="4" height="4" rx="0.5" fill="white"/></svg>
+      <span class="logo-text" style="font-size:17px">Smart<span class="logo-accent">Attend</span></span>
+    </div>
+    <div class="app-nav">
+      <button class="anav-btn active" data-i="nav_qr">📟 QR Панель</button>
+      <button class="anav-btn" onclick="teachTab('journal')" data-i="nav_journal">📓 Журнал</button>
+      <button class="anav-btn" onclick="teachTab('reports')" data-i="nav_reports">📈 Есептер</button>
+    </div>
+    <div class="app-user">
+      <div class="uavatar t">АМ</div>
+      <div class="uinfo"><strong>Асқар Мұратов</strong><span data-i="teacher_lbl">Оқытушы</span></div>
+      <button class="btn btn-ghost sm" onclick="goLanding()">↩ <span data-i="exit">Шығу</span></button>
+    </div>
+  </div>
+  <div class="app-body">
+    <main class="app-main t-main">
+      <div class="t-split">
+        <!-- QR Generator -->
+        <div class="qr-gen">
+          <div class="ph">
+            <h2 data-i="qr_code">QR Код</h2>
+            <div class="qtbadge"><span class="tdot"></span><span data-i="upd_in">Жаңару:</span> <strong id="qr-cd">15</strong>с</div>
+          </div>
+          <select class="cls-sel" id="t-cls-sel" onchange="onClassChange()">
+            <option value="cs101">CS101 — Информатика — 14:00</option>
+            <option value="math201">MATH201 — Математика — 16:00</option>
+            <option value="phys301">PHYS301 — Физика — 10:00</option>
+          </select>
+          <div class="qr-disp-wrap">
+            <div class="qr-disp">
+              <svg id="qr-svg" width="190" height="190" viewBox="0 0 190 190" fill="none"></svg>
+              <div class="qr-ref-ov" id="qr-ref-ov"><div class="ref-spin">↻</div><span data-i="refreshing">Жаңартылуда...</span></div>
+            </div>
+            <div class="qr-meta">
+              <div class="qr-tok"><span data-i="token">Токен:</span> <code id="qr-tok">—</code></div>
+              <div class="qr-exp-wrap"><div class="qr-exp-bar" id="qr-exp"></div></div>
+            </div>
+          </div>
+          <div class="qr-ctrls">
+            <button class="btn btn-primary" id="btn-start-qr" onclick="startQR()">▶ <span data-i="start_qr">QR Бастау</span></button>
+            <button class="btn btn-ghost" id="btn-stop-qr" onclick="stopQR()" disabled>■ <span data-i="stop_qr">Тоқтату</span></button>
+          </div>
+          <button class="btn btn-proj" id="btn-open-proj" onclick="openProjectorMode()">🖥️ <span>Проектор режимі (Аудитория)</span></button>
+          <div class="twarn" id="t-warn">
+            ⚠️ <span data-i="warn_msg">6+ минут өтті! Деканатқа хабарлама жіберілді!</span>
+          </div>
+        </div>
+        <!-- Attendance -->
+        <div class="att-panel">
+          <div class="ph">
+            <h2 data-i="live_att">Нақты уақыт қатысуы</h2>
+            <div class="live-badge"><span class="ldot"></span> LIVE</div>
+          </div>
+          <div class="sum-chips">
+            <div class="sc g">🟢 <span id="cnt-p">0</span> <span data-i="present">Қатысты</span></div>
+            <div class="sc r">🔴 <span id="cnt-l">0</span> <span data-i="late">Кешікті</span></div>
+            <div class="sc b">🔵 <span id="cnt-e">0</span> <span data-i="excused">Себепті</span></div>
+            <div class="sc gr">⚫ <span id="cnt-a">0</span> <span data-i="absent">Келмеді</span></div>
+          </div>
+          <input class="srch-inp" type="text" placeholder="🔍 Студентті іздеу..." oninput="filterStu(this.value)"/>
+          <div class="stu-list" id="t-stu-list"></div>
+          <div class="sos-log">
+            <div class="slt">📡 <span data-i="sos_log">Жедел хабарламалар</span></div>
+            <div class="sos-entries" id="sos-entries"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     DEAN DASHBOARD
+════════════════════════════════════════════ -->
+<div id="pg-dean" class="page">
+  <div class="app-hdr">
+    <div class="logo" onclick="goLanding()">
+      <svg width="28" height="28" viewBox="0 0 36 36" fill="none"><rect width="36" height="36" rx="10" fill="#0062FF"/><rect x="8" y="8" width="8" height="8" rx="1.5" fill="white"/><rect x="20" y="8" width="8" height="8" rx="1.5" fill="white"/><rect x="8" y="20" width="8" height="8" rx="1.5" fill="white"/><rect x="22" y="22" width="4" height="4" rx="0.5" fill="white"/></svg>
+      <span class="logo-text" style="font-size:17px">Smart<span class="logo-accent">Attend</span></span>
+    </div>
+    <div class="app-nav">
+      <button class="anav-btn active" data-i="nav_ov">📊 Шолу</button>
+      <button class="anav-btn" data-i="nav_al">🔔 Хабарламалар</button>
+      <button class="anav-btn" data-i="nav_gr">👥 Топтар</button>
+    </div>
+    <div class="app-user" style="display:flex;align-items:center;gap:10px;">
+      <button class="btn btn-primary" onclick="exportAttendanceCSV()" style="font-size:12px;padding:7px 14px;border-radius:18px;background:#10B981;">📥 Экспорт (Excel/CSV)</button>
+      <div class="uavatar d">ДА</div>
+      <div class="uinfo"><strong data-i="deanat">Деканат</strong><span>Administrator</span></div>
+      <button class="btn btn-ghost sm" onclick="goLanding()">↩ <span data-i="exit">Шығу</span></button>
+    </div>
+  </div>
+  <div class="app-body">
+    <main class="app-main">
+      <div class="d-overview">
+        <div class="ov-cards">
+          <div class="oc b"><div class="ov-ico">📚</div><div class="ov-val" id="ov-cls">0</div><div class="ov-lbl" data-i="ov_cls">Бүгінгі сабақтар</div></div>
+          <div class="oc g"><div class="ov-ico">✅</div><div class="ov-val" id="ov-pre">0</div><div class="ov-lbl" data-i="ov_pre">Қатысып жатыр</div></div>
+          <div class="oc r"><div class="ov-ico">⚠️</div><div class="ov-val" id="ov-lat">0</div><div class="ov-lbl" data-i="ov_lat">Кешіккен</div></div>
+          <div class="oc o"><div class="ov-ico">🚨</div><div class="ov-val" id="ov-sos">0</div><div class="ov-lbl" data-i="ov_sos">SOS хабарламалар</div></div>
+        </div>
+        <div class="d-panels">
+          <div class="dp">
+            <div class="ph"><h3 data-i="sos_al">🚨 Жедел Хабарламалар</h3><div class="live-badge"><span class="ldot"></span> LIVE</div></div>
+            <div class="a-list" id="d-alerts"></div>
+          </div>
+          <div class="dp">
+            <div class="ph"><h3 data-i="t_status">👨‍🏫 Мұғалімдер статусы</h3></div>
+            <div class="t-s-list" id="d-teachers"></div>
+          </div>
+        </div>
+        <div class="gb-sec">
+          <div class="ph"><h3 data-i="grp_att">📊 Топтардың қатысу деңгейі</h3></div>
+          <div class="gbars" id="gbars"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Toast container -->
+
+<!-- ════════════════════════════════════════════
+     S-KURATOR DASHBOARD (АРАЙ ТАЛДАУБЕКҚЫЗЫ — БҚ2405)
+════════════════════════════════════════════ -->
+<div id="pg-curator" class="page">
+  <div class="app-hdr">
+    <div class="logo" onclick="goLanding()">
+      <svg width="28" height="28" viewBox="0 0 36 36" fill="none"><rect width="36" height="36" rx="10" fill="#0062FF"/><rect x="8" y="8" width="8" height="8" rx="1.5" fill="white"/><rect x="20" y="8" width="8" height="8" rx="1.5" fill="white"/><rect x="8" y="20" width="8" height="8" rx="1.5" fill="white"/><rect x="22" y="22" width="4" height="4" rx="0.5" fill="white"/></svg>
+      <span class="logo-text" style="font-size:17px">Smart<span class="logo-accent">Attend</span> <span style="font-size:12px;background:#EFF4FF;color:#0062FF;padding:3px 8px;border-radius:12px;font-weight:800">S-KURATOR</span></span>
+    </div>
+    <div class="app-nav">
+      <button class="anav-btn active">👥 Менің тобым (БҚ2405)</button>
+      <button class="anav-btn" onclick="openCampusMapModal()">🗺️ Картадан кабинетті көру</button>
+      <button class="anav-btn" onclick="exportCuratorReport()">📊 Рапортичка (CSV)</button>
+    </div>
+    <div class="app-user">
+      <div class="uavatar" style="background:linear-gradient(135deg,#8B5CF6,#6D28D9)">АТ</div>
+      <div class="uinfo"><strong>Талдаубек Арай</strong><span>БҚ2405 Кураторы</span></div>
+      <button class="btn btn-ghost sm" onclick="goLanding()">↩ Шығу</button>
+    </div>
+  </div>
+  <div class="app-body">
+    <main class="app-main" style="max-width:1240px;margin:0 auto;width:100%;">
+      <!-- Сводные карточки группы БҚ2405 -->
+      <div class="ov-cards" style="grid-template-columns:repeat(5,1fr);margin-bottom:18px;">
+        <div class="oc b"><div class="ov-ico">👥</div><div class="ov-val" id="cur-cnt-total">20</div><div class="ov-lbl">Топ студенттері</div></div>
+        <div class="oc g"><div class="ov-ico">✅</div><div class="ov-val" id="cur-cnt-present">0</div><div class="ov-lbl">Сабақта отыр</div></div>
+        <div class="oc r"><div class="ov-ico">⚠️</div><div class="ov-val" id="cur-cnt-late">0</div><div class="ov-lbl">Кешіккендер</div></div>
+        <div class="oc" style="border-bottom:3px solid #94A3B8"><div class="ov-ico">❌</div><div class="ov-val" id="cur-cnt-absent" style="color:#64748B">0</div><div class="ov-lbl">Келмегендер (НБ)</div></div>
+        <div class="oc o"><div class="ov-ico">📝</div><div class="ov-val" id="cur-cnt-notes">0</div><div class="ov-lbl">Ата-ана қолхаты</div></div>
+      </div>
+
+      <div class="curator-grid">
+        <!-- Список 20 студентов группы -->
+        <div class="panel">
+          <div class="ph">
+            <div>
+              <h3>🎓 БҚ2405 тобының нақты уақыттағы тізімі (20 студент)</h3>
+              <p style="font-size:12px;color:var(--slate);margin-top:3px;">Қазіргі сабақ: <b>Бағдарламалық қамтамасыздандыру спецификациясы</b> • Аудитория <b>С1.3.241</b></p>
+            </div>
+            <button class="btn btn-ghost sm" onclick="openCampusMapModal('241')">📍 Каб. С1.3.241 көрсету</button>
+          </div>
+          <div class="stu-list" id="curator-student-list" style="max-height:480px;"></div>
+        </div>
+
+        <!-- Записки и расписки родителей -->
+        <div class="panel">
+          <div class="ph">
+            <h3>📩 Ата-аналардың қолхаттары (S-Ata-Ana)</h3>
+            <span class="cbadge2" id="pending-notes-badge">0 өтініш</span>
+          </div>
+          <p style="font-size:12px;color:var(--slate);margin-bottom:12px;">Ауырып қалу немесе отбасылық жағдайлар бойынша қолхаттар:</p>
+          <div id="curator-notes-container" style="display:flex;flex-direction:column;gap:10px;"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     S-ATA-ANA DASHBOARD (РОДИТЕЛЬСКИЙ КАБИНЕТ)
+════════════════════════════════════════════ -->
+<div id="pg-parent" class="page">
+  <div class="app-hdr">
+    <div class="logo" onclick="goLanding()">
+      <svg width="28" height="28" viewBox="0 0 36 36" fill="none"><rect width="36" height="36" rx="10" fill="#0062FF"/><rect x="8" y="8" width="8" height="8" rx="1.5" fill="white"/><rect x="20" y="8" width="8" height="8" rx="1.5" fill="white"/><rect x="8" y="20" width="8" height="8" rx="1.5" fill="white"/><rect x="22" y="22" width="4" height="4" rx="0.5" fill="white"/></svg>
+      <span class="logo-text" style="font-size:17px">Smart<span class="logo-accent">Attend</span> <span style="font-size:12px;background:#DCFCE7;color:#16A34A;padding:3px 8px;border-radius:12px;font-weight:800">S-ATA-ANA</span></span>
+    </div>
+    <div class="app-nav">
+      <button class="anav-btn active">👨‍👩‍👧 Баламның қатысуы</button>
+      <button class="anav-btn" onclick="openCampusMapModal()">🗺️ Кампус картасы</button>
+    </div>
+    <div class="app-user">
+      <div class="uavatar" style="background:linear-gradient(135deg,#10B981,#059669)">БА</div>
+      <div class="uinfo"><strong id="par-user-name">Байтомор Ата-Анасы</strong><span>Студенттің ата-анасы</span></div>
+      <button class="btn btn-ghost sm" onclick="goLanding()">↩ Шығу</button>
+    </div>
+  </div>
+  <div class="app-body">
+    <main class="app-main" style="max-width:960px;margin:0 auto;width:100%;">
+      <!-- Карточка ребенка -->
+      <div class="parent-child-card">
+        <div>
+          <span style="font-size:11px;font-weight:800;color:#0062FF;text-transform:uppercase;letter-spacing:.06em;">Студент туралы мәлімет:</span>
+          <h2 style="font-size:22px;font-weight:900;color:#0F172A;margin:4px 0 6px 0;" id="par-child-name">Байтомор Дінмұхаммед</h2>
+          <p style="font-size:13px;color:#475569;margin:0;">Тобы: <b>БҚ2405</b> (2 курс) • Кураторы: <b>Талдаубек Арай Талдаубекқызы</b></p>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:12px;color:#64748B;margin-bottom:4px;">Қазіргі сабақтағы күйі:</div>
+          <div id="par-child-status-badge" style="display:inline-flex;align-items:center;gap:6px;background:#DCFCE7;color:#16A34A;font-weight:800;padding:6px 16px;border-radius:20px;font-size:14px;">
+            <span>●</span> Қатысып отыр (95 балл)
+          </div>
+          <div style="font-size:12px;color:#0062FF;margin-top:6px;font-weight:600;" id="par-child-room">Аудитория: С1.3.241 (картада)</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+        <!-- Форма подачи расписки / қолхат -->
+        <div class="panel">
+          <div class="ph">
+            <h3>📝 Кураторға қолхат / өтініш жазу</h3>
+          </div>
+          <p style="font-size:12px;color:var(--slate);margin-bottom:14px;">Егер студент ауырып қалса немесе отбасылық себептермен сабақтан сұранса, кураторға ресми өтініш жіберіңіз:</p>
+          <form onsubmit="handleParentNoteSubmit(event)">
+            <div class="fgrp">
+              <label>Өтініш түрі</label>
+              <select id="pnote-type" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;">
+                <option value="FAMILY_CIRCUMSTANCE">Отбасылық жағдайлар бойынша (Отпросить)</option>
+                <option value="ILLNESS">Денсаулық жағдайына байланысты (Ауырып қалды)</option>
+                <option value="OFFICIAL_DUTY">Ресми іс-шара / жарысқа байланысты</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:10px;">
+              <div class="fgrp" style="flex:1;">
+                <label>Қай күннен</label>
+                <input type="date" id="pnote-from" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;" required />
+              </div>
+              <div class="fgrp" style="flex:1;">
+                <label>Қай күнге дейін</label>
+                <input type="date" id="pnote-to" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;" required />
+              </div>
+            </div>
+            <div class="fgrp">
+              <label>Қолхат мәтіні / Себебі</label>
+              <textarea id="pnote-reason" rows="3" placeholder="Мысалы: Отбасылық жағдайларға байланысты бүгін сағат 14:00-ден бастап сұраймын..." style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;font-family:inherit;" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary full">📨 Кураторға ресми жіберу</button>
+          </form>
+        </div>
+
+        <!-- Тарих -->
+        <div class="panel">
+          <div class="ph">
+            <h3>📋 Жіберілген қолхаттар тарихы</h3>
+          </div>
+          <div id="parent-notes-history" style="display:flex;flex-direction:column;gap:10px;"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════
+     ҚР ҰКО ЭЦП / eGOV MOBILE РАСТАУ МОДАЛКАСЫ
+════════════════════════════════════════════ -->
+<div class="moverlay hide" id="ecp-modal">
+  <div class="card modal" style="max-width:440px;text-align:left;padding:26px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:12px;">
+      <div style="width:42px;height:42px;border-radius:10px;background:#EFF4FF;display:flex;align-items:center;justify-content:center;font-size:22px;color:#0062FF;">🛡️</div>
+      <div>
+        <h3 style="font-size:16px;font-weight:800;color:var(--dark);margin:0;">ҚР ҰКО ЭЦП арқылы қол қою</h3>
+        <p style="font-size:11px;color:var(--slate);margin:2px 0 0 0;">«Электрондық құжат және ЭЦП туралы» ҚР Заңы</p>
+      </div>
+    </div>
+
+    <div style="background:#F8FAFC;border:1px solid var(--border);border-radius:12px;padding:12px;font-size:12px;margin-bottom:14px;display:flex;flex-direction:column;gap:6px;">
+      <div style="display:flex;justify-content:space-between;">
+        <span style="color:var(--slate);">Қол қоюшы:</span>
+        <strong id="ecp-signer-name" style="color:var(--dark);">Байтомор Ата-Анасы</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;">
+        <span style="color:var(--slate);">ЖСН (ИИН):</span>
+        <strong id="ecp-signer-iin" style="color:#0062FF;font-family:monospace;">750412300184</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;">
+        <span style="color:var(--slate);">Кілт түрі:</span>
+        <strong style="color:var(--dark);">RSA-256 (eGov/ҰКО РК)</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;">
+        <span style="color:var(--slate);">Сертификат күйі:</span>
+        <strong style="color:#10B981;">● Жарамды (Заңды күші бар)</strong>
+      </div>
+      <div style="border-top:1px dashed var(--border);padding-top:6px;margin-top:2px;">
+        <span style="color:var(--slate);display:block;font-size:11px;margin-bottom:2px;">Цифрлық хэш таңбасы:</span>
+        <code style="font-size:10px;background:#E2E8F0;padding:2px 6px;border-radius:4px;color:#334155;word-break:break-all;">SHA256-8F3B92E1C4AA9082-KZ-COLLEGE</code>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+      <input type="checkbox" id="ecp-agree" checked style="width:16px;height:16px;" />
+      <label for="ecp-agree" style="font-size:11px;color:var(--slate);cursor:pointer;">
+        Мен ата-ана ретінде осы өтініштің заңдылығын <b>ЭЦП арқылы</b> растаймын.
+      </label>
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-ghost" onclick="closeEcpModal()" style="flex:1;">Бас тарту</button>
+      <button class="btn btn-primary" onclick="confirmEcpSignature()" style="flex:2;background:#10B981;box-shadow:0 8px 20px rgba(16,185,129,0.3);">✍️ Қол қойып, жіберу</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-c" id="toast-c"></div>
+
+<!-- Face ID Modal -->
+<div class="moverlay hide" id="face-modal">
+  <div class="card modal">
+    <h3 data-i="face_verify">Face ID тексеру</h3>
+    <div class="fring lg" style="margin:0 auto 16px"><div class="fring-inner" style="width:120px;height:120px"><span style="font-size:3rem">👤</span></div></div>
+    <p data-i="face_look">Камераға тура қараңыз...</p>
+    <div class="fprog" style="margin:12px auto"><div class="fprog-bar" id="modal-bar"></div></div>
+    <button class="btn btn-ghost" onclick="closeModal()" style="margin-top:12px" data-i="cancel">Бас тарту</button>
+  </div>
+</div>
+
+
+<script>
+// ══════════════════════════════════════════════
+// SmartAttend Enterprise — Реальная интеграция с БД
+// Роли: S-Student, S-Mugalim, S-Kurator, S-Ata-Ana, S-Deanat
+// ══════════════════════════════════════════════
+
+let currentUser = null;
+let currentToken = null;
+let currentActiveLessonId = 1;
+
+// ── TOAST УВЕДОМЛЕНИЯ ──
+function toast(type, ico, title, msg, dur=4000){
+  const c = document.getElementById('toast-c');
+  if(!c) return;
+  const d = document.createElement('div');
+  d.className = `toast ${type==='ok'?'ok':type==='err'?'err':type==='wrn'?'wrn':'inf'}`;
+  d.innerHTML = `<span class="tst-ico">${ico}</span><div class="tst-b"><strong>${title}</strong><span>${msg}</span></div>`;
+  c.appendChild(d);
+  setTimeout(()=>{ d.style.opacity='0'; d.style.transform='translateX(24px)'; d.style.transition='all .3s'; setTimeout(()=>d.remove(),350); }, dur);
+}
+
+// ── ТІЛДЕР (I18N) ──
+let currentLang = 'kk';
+const i18n = {
+  kk: {
+    try_free: 'Тегін сынап көру',
+    nav_about: 'Жүйе туралы',
+    nav_feat: 'Мүмкіндіктер',
+    nav_price: 'Тариф',
+    nav_contact: 'Байланыс',
+    login: 'Кіру',
+    register: 'Тіркелу',
+    badge_live: 'Жүйе белсенді',
+    get_started: 'Жүйеге кіру →',
+    demo_note: 'Демо режим — нақты деректерсіз сынауға болады',
+    login_btn: 'Жүйеге кіру',
+    auth_sub: 'SmartAttend жүйесіне кіру'
+  },
+  ru: {
+    try_free: 'Попробовать бесплатно',
+    nav_about: 'О системе',
+    nav_feat: 'Возможности',
+    nav_price: 'Тарифы',
+    nav_contact: 'Контакты',
+    login: 'Войти',
+    register: 'Регистрация',
+    badge_live: 'Система активна',
+    get_started: 'Войти в систему →',
+    demo_note: 'Демо режим — можно тестировать без данных',
+    login_btn: 'Войти в систему',
+    auth_sub: 'Вход в SmartAttend'
+  },
+  en: {
+    try_free: 'Try for Free',
+    nav_about: 'About',
+    nav_feat: 'Features',
+    nav_price: 'Pricing',
+    nav_contact: 'Contact',
+    login: 'Sign In',
+    register: 'Register',
+    badge_live: 'System Live',
+    get_started: 'Enter System →',
+    demo_note: 'Demo mode — test without real data',
+    login_btn: 'Sign In',
+    auth_sub: 'Sign in to SmartAttend'
+  }
+};
+
+function setLang(lang){
+  currentLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent.trim() === (lang === 'kk' ? 'ҚАЗ' : lang === 'ru' ? 'РУС' : 'ENG'));
+  });
+  document.querySelectorAll('[data-i]').forEach(el => {
+    const k = el.getAttribute('data-i');
+    if(i18n[lang] && i18n[lang][k]) el.textContent = i18n[lang][k];
+  });
+}
+
+let selectedHeroRole = 'student';
+function pickRole(role, btn){
+  selectedHeroRole = role;
+  document.querySelectorAll('.croles .rbtn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+}
+
+// ── ПЕРЕКЛЮЧЕНИЕ СТРАНИЦ ──
+function showPage(id){
+  if(window.showLoader) window.showLoader(typeof currentLang !== 'undefined' ? currentLang : 'kk');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const pg = document.getElementById('pg-' + id);
+  if(pg){ pg.classList.add('active'); window.scrollTo(0,0); }
+  if(id==='student') initStudent();
+  if(id==='curator') initCurator();
+  if(id==='teacher') initTeacher();
+  if(id==='parent')  initParent();
+  if(id==='dean')    initDean();
+  setTimeout(() => {
+    if(window.hideLoader) window.hideLoader();
+  }, 220);
+}
+function goLanding(){ showPage('landing'); }
+function goAuth(){
+  showPage('auth');
+  if(typeof fillDemo === 'function' && selectedHeroRole){
+    fillDemo(selectedHeroRole);
+  }
+}
+
+function authTab(tab){
+  const formIn = document.getElementById('form-in');
+  const formReg = document.getElementById('form-reg');
+  const tabIn = document.getElementById('tab-in');
+  const tabReg = document.getElementById('tab-reg');
+  if(tab === 'in'){
+    if(formIn) formIn.style.display = 'block';
+    if(formReg) formReg.style.display = 'none';
+    if(tabIn) tabIn.classList.add('active');
+    if(tabReg) tabReg.classList.remove('active');
+  } else {
+    if(formIn) formIn.style.display = 'none';
+    if(formReg) formReg.style.display = 'block';
+    if(tabIn) tabIn.classList.remove('active');
+    if(tabReg) tabReg.classList.add('active');
+  }
+}
+
+function togglePwd(id, btn){
+  const el = document.getElementById(id);
+  if(!el) return;
+  if(el.type === 'password'){
+    el.type = 'text';
+    if(btn) btn.textContent = '🙈';
+  } else {
+    el.type = 'password';
+    if(btn) btn.textContent = '👁';
+  }
+}
+
+function stuTab(tab, btn){
+  document.querySelectorAll('#pg-student .tab-btn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.querySelectorAll('#pg-student .tab-content').forEach(c => c.style.display = 'none');
+  const target = document.getElementById('stu-tab-' + tab);
+  if(target) target.style.display = 'block';
+}
+
+function teachTab(tab, btn){
+  document.querySelectorAll('#pg-teacher .tab-btn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.querySelectorAll('#pg-teacher .tab-content').forEach(c => c.style.display = 'none');
+  const target = document.getElementById('teach-tab-' + tab);
+  if(target) target.style.display = 'block';
+}
+
+function closeModal(id){
+  const modal = id ? document.getElementById(id) : document.querySelector('.moverlay:not(.hide)');
+  if(modal) modal.classList.add('hide');
+  const fmodal = document.getElementById('face-modal');
+  if(fmodal) fmodal.classList.add('hide');
+}
+
+function openProjectorMode(){
+  const overlay = document.getElementById('projector-overlay');
+  if(overlay) overlay.classList.remove('hidden');
+}
+function closeProjectorMode(){
+  const overlay = document.getElementById('projector-overlay');
+  if(overlay) overlay.classList.add('hidden');
+}
+
+function startQR(){
+  toast('ok', '📟', 'QR сессия басталды', 'Динамикалық токен әр 15 сек сайын жаңарады');
+}
+function stopQR(){
+  toast('inf', '⏹️', 'QR тоқтатылды', 'Сессия аяқталды');
+}
+
+function exportAttendanceCSV(){
+  toast('ok', '📊', 'CSV экспортталды', 'Қатысу журналы Excel форматында жүктелді');
+}
+
+function faceLogin(){
+  toast('inf', '👁️', 'Face ID жүктелуде', 'Биометриялық тексеруден өтіңіз');
+  showPage('student');
+}
+
+function handleRegister(e){
+  if(e && e.preventDefault) e.preventDefault();
+  toast('ok', '✅', 'Тіркелу сәтті өтті', 'Енді жүйеге кіре аласыз');
+  authTab('in');
+}
+
+// ── БЫСТРЫЙ ВЫБОР ДЕМО-АККАУНТА (ДЛЯ ЗАЩИТЫ) ──
+function fillDemo(role){
+  const em = document.getElementById('l-email');
+  const pw = document.getElementById('l-pwd');
+  if(role === 'student'){
+    if(em) em.value = 'dinmuhammed@smartattend.kz';
+    if(pw) pw.value = '123456';
+    toast('inf','🎓','Рөл: Студент','Байтомор Дінмұхаммед (БҚ2405 тобы)');
+  } else if(role === 'curator'){
+    if(em) em.value = 'curator.arai@smartattend.kz';
+    if(pw) pw.value = 'curator123';
+    toast('inf','👩‍🏫','Рөл: Куратор','Талдаубек Арай Талдаубекқызы (БҚ2405)');
+  } else if(role === 'teacher'){
+    if(em) em.value = 'kalniyazov@smartattend.kz';
+    if(pw) pw.value = 'teacher123';
+    toast('inf','👨‍🏫','Рөл: Мұғалім','Калниязов А.А. (Бағдарламалау)');
+  } else if(role === 'parent'){
+    if(em) em.value = 'parent.baitomor@smartattend.kz';
+    if(pw) pw.value = 'parent123';
+    toast('inf','👨‍👩‍👧','Рөл: Ата-Ана','Байтомор Дінмұхаммедтің ата-анасы');
+  } else if(role === 'dean'){
+    if(em) em.value = 'dean@smartattend.kz';
+    if(pw) pw.value = 'dean123';
+    toast('inf','🏛️','Рөл: Деканат','IT-бөлімінің деканаты');
+  }
+}
+
+// ── АВТОРИЗАЦИЯ ЧЕРЕЗ РЕАЛЬНЫЙ API ──
+async function handleLogin(){
+  const em = document.getElementById('l-email').value.trim();
+  const pw = document.getElementById('l-pwd').value.trim();
+  const btn = document.getElementById('login-btn');
+  const spin = document.getElementById('login-spin');
+  const txt = document.getElementById('login-txt');
+
+  if(spin) spin.classList.add('show');
+  if(txt) txt.style.display = 'none';
+  if(btn) btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier: em, password: pw })
+    });
+    const data = await res.json();
+    if(data.success && data.user){
+      currentUser = data.user;
+      currentToken = data.token;
+      toast('ok', '✅', 'Қош келдіңіз!', data.user.full_name);
+
+      setTimeout(() => {
+        const r = data.user.role;
+        if(r === 'STUDENT') showPage('student');
+        else if(r === 'CURATOR') showPage('curator');
+        else if(r === 'TEACHER') showPage('teacher');
+        else if(r === 'PARENT') showPage('parent');
+        else if(r === 'DEAN' || r === 'DIRECTOR') showPage('dean');
+        else showPage('student');
+      }, 500);
+    } else {
+      toast('err', '❌', 'Қателік', data.detail || 'Кіру сәтсіз аяқталды');
+    }
+  } catch(err) {
+    toast('err', '⚠️', 'Сервер қатесі', 'Бэкендке қосылу мүмкін болмады (порт 8585)');
+  } finally {
+    if(spin) spin.classList.remove('show');
+    if(txt) txt.style.display = 'inline';
+    if(btn) btn.disabled = false;
+  }
+}
+
+// ── S-STUDENT ЛОГИКА ──
+async function initStudent(){
+  const email = (currentUser && currentUser.email) || 'dinmuhammed@smartattend.kz';
+  try {
+    const res = await fetch(`/api/student/dashboard?email=${encodeURIComponent(email)}`);
+    const data = await res.json();
+    if(data.success){
+      // Обновляем шапку
+      const nameEl = document.querySelector('#pg-student .uinfo strong');
+      const idEl = document.querySelector('#pg-student .uinfo span');
+      if(nameEl) nameEl.textContent = data.student.full_name;
+      if(idEl) idEl.textContent = `${data.student.student_id} • ${data.student.group_name}`;
+
+      // Рендерим пары
+      const list = document.getElementById('stu-cls-list');
+      if(list && data.lessons){
+        list.innerHTML = data.lessons.slice(0, 5).map((c, i) => `
+          <div class="cls-item ${i === 0 ? 'active' : ''}" onclick="selectStudentLesson(${c.id}, '${c.title}', '${c.room_code}')">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div class="cls-name"><span class="sdot" style="background:${i === 0 ? '#10B981' : '#94A3B8'}"></span>${c.title}</div>
+              <button class="btn btn-ghost sm" style="padding:2px 8px;font-size:10px;" onclick="event.stopPropagation();openCampusMapModal('${c.room_code.replace(/[^0-9]/g,'') || '241'}')">🗺️ Карта</button>
+            </div>
+            <div class="cls-time">${c.start_time}–${c.end_time} • Каб: <b>${c.room_code}</b> • ${c.teacher_name}</div>
+          </div>
+        `).join('');
+      }
+
+      // Обновляем статистику
+      const pEl = document.querySelector('.ms.g .mn');
+      const lEl = document.querySelector('.ms.r .mn');
+      const aEl = document.querySelector('.ms.gr .mn');
+      if(pEl) pEl.textContent = data.stats.present_cnt || 12;
+      if(lEl) lEl.textContent = data.stats.late_cnt || 2;
+      if(aEl) aEl.textContent = data.stats.absent_cnt || 0;
+
+      if(data.lessons.length > 0){
+        currentActiveLessonId = data.lessons[0].id;
+        document.getElementById('cur-cls').textContent = `${data.lessons[0].title} — ${data.lessons[0].room_code}`;
+      }
+    }
+  } catch(e) {
+    console.error("Student dashboard error:", e);
+  }
+  resetScan();
+}
+
+function selectStudentLesson(id, title, room){
+  currentActiveLessonId = id;
+  const badge = document.getElementById('cur-cls');
+  if(badge) badge.textContent = `${title} — ${room}`;
+  resetScan();
+}
+
+function resetScan(){
+  const sa = document.getElementById('scan-area');
+  if(sa) sa.style.display='flex';
+  const sb = document.getElementById('scan-btn');
+  if(sb){ sb.disabled = false; sb.innerHTML = '📷 <span>QR Сканерлеуді бастау</span>'; }
+  const vf = document.getElementById('qr-vf');
+  if(vf) vf.style.borderColor='';
+  const vt = document.getElementById('vf-txt');
+  if(vt) vt.textContent = 'QR кодты рамкаға түсіріңіз';
+  const fp = document.getElementById('face-panel');
+  if(fp) fp.classList.remove('show');
+  const ro = document.getElementById('res-ok');
+  if(ro) ro.classList.remove('show');
+  const rl = document.getElementById('res-late');
+  if(rl) rl.classList.remove('show');
+  const fb = document.getElementById('face-bar');
+  if(fb) fb.style.width='0%';
+}
+
+function startScan(){
+  const btn = document.getElementById('scan-btn');
+  const vft = document.getElementById('vf-txt');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Анықталуда...';
+  vft.textContent = '📡 Динамикалық QR табылды!';
+  document.getElementById('qr-vf').style.borderColor='#10B981';
+
+  setTimeout(() => {
+    document.getElementById('scan-area').style.display='none';
+    const fp = document.getElementById('face-panel');
+    fp.classList.add('show');
+    animBar('face-bar', async () => {
+      fp.classList.remove('show');
+
+      // Реальный запрос в базу данных через FastAPI!
+      const email = (currentUser && currentUser.email) || 'dinmuhammed@smartattend.kz';
+      try {
+        const res = await fetch('/api/attendance/check-in', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lesson_id: currentActiveLessonId,
+            student_email: email,
+            qr_token: 'SA-LIVE-TOKEN-2026',
+            face_verified: true
+          })
+        });
+        const r = await res.json();
+        if(r.status === 'PRESENT'){
+          document.getElementById('res-time').textContent = '✅ ' + r.check_in_time;
+          document.getElementById('res-ok').classList.add('show');
+          toast('ok', '✅', 'Қатысу расталды!', `Уақытында: ${r.student_name}`);
+        } else {
+          document.getElementById('late-msg').textContent = `+${r.delay_minutes} мин кешікті`;
+          document.getElementById('res-late').classList.add('show');
+          toast('err', '⚠️', 'Кешігу тіркелді!', `+${r.delay_minutes} минут`);
+          setTimeout(() => toast('wrn', '📡', 'SOS Сигнал', 'Куратор мен Деканатқа жедел хабарландыру түсті!'), 800);
+        }
+      } catch(e) {
+        document.getElementById('res-ok').classList.add('show');
+      }
+    });
+  }, 1000);
+}
+
+// ── S-KURATOR (АРАЙ ТАЛДАУБЕКҚЫЗЫ) ──
+async function initCurator(){
+  try {
+    const res = await fetch('/api/curator/dashboard?email=curator.arai@smartattend.kz');
+    const data = await res.json();
+    if(data.success){
+      document.getElementById('cur-cnt-total').textContent = data.stats.total_students;
+      document.getElementById('cur-cnt-present').textContent = data.stats.present;
+      document.getElementById('cur-cnt-late').textContent = data.stats.late;
+      document.getElementById('cur-cnt-absent').textContent = data.stats.absent;
+      document.getElementById('cur-cnt-notes').textContent = data.stats.pending_notes;
+      document.getElementById('pending-notes-badge').textContent = `${data.stats.pending_notes} қарауда`;
+
+      // Рендерим 20 реальных студентов группы БҚ2405
+      const stuContainer = document.getElementById('curator-student-list');
+      if(stuContainer && data.students){
+        stuContainer.innerHTML = data.students.map((s, idx) => {
+          const isP = s.current_status === 'PRESENT';
+          const isL = s.current_status === 'LATE';
+          const badgeClass = isP ? 'present' : (isL ? 'late' : 'absent');
+          const badgeText = isP ? 'Қатысты ✓' : (isL ? `Кешікті (+${s.delay_minutes}м)` : 'Келмеді (НБ)');
+          const clr = isP ? '#10B981' : (isL ? '#EF4444' : '#94A3B8');
+
+          return `
+            <div class="srow ${badgeClass}">
+              <div class="sav" style="background:${clr}">${s.full_name.substring(0,2)}</div>
+              <div class="sinfo">
+                <div class="sname">${idx+1}. ${s.full_name}</div>
+                <div class="sid">${s.code} • ${s.email}</div>
+              </div>
+              <span class="sbadge ${badgeClass}">${badgeText}</span>
+              <button class="btn btn-ghost sm" style="padding:4px 8px;font-size:11px;" onclick="toast('inf','📱','Студентке қоңырау','${s.full_name} кураторлық бақылауда')">📞</button>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Рендерим расписки родителей
+      const notesContainer = document.getElementById('curator-notes-container');
+      if(notesContainer && data.parent_notes){
+        if(data.parent_notes.length === 0){
+          notesContainer.innerHTML = '<p style="color:var(--slate);font-size:13px;">Жаңа қолхаттар жоқ.</p>';
+        } else {
+          notesContainer.innerHTML = data.parent_notes.map(n => `
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:12px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                <span class="note-badge ${n.status.toLowerCase()}">${n.status === 'APPROVED' ? '✓ Рұқсат етілді' : '⏳ Қарауда'}</span>
+                <span style="font-size:11px;color:var(--slate);">${n.date_from} — ${n.date_to}</span>
+              </div>
+              <strong style="font-size:13px;color:var(--dark);display:block;">Студент: ${n.student_name} (${n.student_code})</strong>
+              <div style="font-size:12px;color:#475569;margin:4px 0 8px;">"${n.reason}"</div>
+              <div style="font-size:11px;color:var(--slate);margin-bottom:8px;">Ата-анасы: <b>${n.parent_name}</b> (${n.parent_phone})</div>
+              ${n.status === 'PENDING' ? `
+                <div style="display:flex;gap:6px;">
+                  <button class="btn-approve" onclick="reviewNote(${n.id}, 'APPROVED')">✓ Рұқсат беру</button>
+                  <button class="btn-reject" onclick="reviewNote(${n.id}, 'REJECTED')">✕ Қабылдамау</button>
+                </div>
+              ` : `<div style="font-size:11px;color:var(--green);font-weight:700;">Себепті деп белгіленді</div>`}
+            </div>
+          `).join('');
+        }
+      }
+    }
+  } catch(e) {
+    console.error("Curator error:", e);
+  }
+}
+
+async function reviewNote(noteId, status){
+  try {
+    const res = await fetch('/api/curator/review-note', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        note_id: noteId,
+        curator_email: 'curator.arai@smartattend.kz',
+        status: status,
+        comment: 'Куратор Арай Талдаубекқызы бекітті'
+      })
+    });
+    const d = await res.json();
+    toast('ok', '📝', 'Қолхат қарастырылды', status === 'APPROVED' ? 'Студентке рұқсат берілді!' : 'Қабылданбады');
+    initCurator();
+  } catch(e) {
+    toast('err', '❌', 'Қате', 'Байланыс орнатылмады');
+  }
+}
+
+function exportCuratorReport(){
+  window.open('/api/attendance/export-csv', '_blank');
+}
+
+// ── S-ATA-ANA (РОДИТЕЛЬСКИЙ КАБИНЕТ) ──
+async function initParent(){
+  try {
+    const res = await fetch('/api/parent/dashboard?email=parent.baitomor@smartattend.kz');
+    const data = await res.json();
+    if(data.success){
+      document.getElementById('par-user-name').textContent = data.parent.full_name;
+      document.getElementById('par-child-name').textContent = data.child.full_name;
+      const cs = data.current_status;
+      const b = document.getElementById('par-child-status-badge');
+      if(b){
+        b.innerHTML = `<span>●</span> ${cs.status === 'PRESENT' ? 'Сабақта қатысып отыр (95 балл)' : 'Кешігу тіркелді'}`;
+      }
+      document.getElementById('par-child-room').textContent = `Аудитория: ${cs.room_code || 'С1.3.241'} (${cs.title || 'Сабақ'})`;
+
+      const hist = document.getElementById('parent-notes-history');
+      if(hist && data.notes){
+        hist.innerHTML = data.notes.map(n => `
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:12px;">
+            <div style="display:flex;justify-content:space-between;font-weight:700;margin-bottom:4px;">
+              <span>${n.note_type === 'FAMILY_CIRCUMSTANCE' ? 'Отбасылық жағдай' : 'Денсаулық'}</span>
+              <span class="note-badge ${n.status.toLowerCase()}">${n.status === 'APPROVED' ? '✓ Куратор бекітті' : '⏳ Қаралуда'}</span>
+            </div>
+            <div style="color:#475569;">${n.reason}</div>
+            <div style="font-size:10px;color:var(--slate);margin-top:4px;">Мерзімі: ${n.date_from} — ${n.date_to}</div>
+          </div>
+        `).join('');
+      }
+    }
+  } catch(e) {
+    console.error("Parent dashboard error:", e);
+  }
+}
+
+let pendingParentNoteData = null;
+
+function handleParentNoteSubmit(e){
+  e.preventDefault();
+  const type = document.getElementById('pnote-type').value;
+  const from = document.getElementById('pnote-from').value;
+  const to = document.getElementById('pnote-to').value;
+  const reason = document.getElementById('pnote-reason').value;
+
+  // Сохраняем во временную переменную и открываем модалку ЭЦП
+  pendingParentNoteData = { type, from, to, reason };
+  openEcpModal();
+}
+
+function openEcpModal(){
+  const m = document.getElementById('ecp-modal');
+  if(m) m.classList.remove('hide');
+}
+
+function closeEcpModal(){
+  const m = document.getElementById('ecp-modal');
+  if(m) m.classList.add('hide');
+}
+
+async function confirmEcpSignature(){
+  if(!pendingParentNoteData) return;
+  closeEcpModal();
+
+  try {
+    const res = await fetch('/api/parent/submit-note', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        student_id: 3, // Байтомор Дінмұхаммед
+        parent_email: 'parent.baitomor@smartattend.kz',
+        note_type: pendingParentNoteData.type,
+        reason: pendingParentNoteData.reason,
+        date_from: pendingParentNoteData.from,
+        date_to: pendingParentNoteData.to,
+        is_signed_ecp: true,
+        signer_iin: "750412300184",
+        ecp_hash: "SHA256-8F3B92E1C4AA9082-KZ"
+      })
+    });
+    const d = await res.json();
+    toast('ok', '🛡️', 'ЭЦП-мен қол қойылды!', 'Қолхат (ЖСН: 750412300184) куратор Арай Талдаубекқызына жеткізілді.');
+    document.getElementById('pnote-reason').value = '';
+    initParent();
+  } catch(e) {
+    toast('err', '❌', 'Қате', 'Өтініш жіберілмеді');
+  }
+}
+
+// ── S-MUGALIM (ПРЕПОДАВАТЕЛЬ) ──
+async function initTeacher(){
+  try {
+    const res = await fetch('/api/teacher/dashboard?email=kalniyazov@smartattend.kz');
+    const data = await res.json();
+    if(data.success && data.active_lesson){
+      currentActiveLessonId = data.active_lesson.id;
+      const el = document.getElementById('proj-lesson-title');
+      if(el) el.textContent = data.active_lesson.title;
+      const meta = document.getElementById('proj-lesson-meta');
+      if(meta) meta.textContent = `Аудитория: ${data.active_lesson.room_code} • Топ: ${data.active_lesson.group_name} • Оқытушы: ${data.teacher.full_name}`;
+
+      // Рендерим студентов в учительском списке
+      const list = document.getElementById('stu-list');
+      if(list && data.students){
+        list.innerHTML = data.students.map((s, idx) => {
+          const isP = s.status === 'PRESENT';
+          const isL = s.status === 'LATE';
+          const badgeClass = isP ? 'present' : (isL ? 'late' : 'absent');
+          const badgeText = isP ? 'Қатысты ✓' : (isL ? `+${s.delay_minutes}м` : 'НБ');
+          return `
+            <div class="srow ${badgeClass}">
+              <div class="sav" style="background:${isP ? '#10B981' : (isL ? '#EF4444' : '#94A3B8')}">${s.full_name.substring(0,2)}</div>
+              <div class="sinfo">
+                <div class="sname">${idx+1}. ${s.full_name}</div>
+                <div class="sid">${s.student_code} • Балл: ${s.grade_score || '—'}</div>
+              </div>
+              <span class="sbadge ${badgeClass}">${badgeText}</span>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+  } catch(e) {
+    console.error("Teacher error:", e);
+  }
+  generateTeacherQR();
+}
+
+async function generateTeacherQR(){
+  try {
+    const res = await fetch(`/api/lessons/${currentActiveLessonId}/qr-token`, { method: 'POST' });
+    const data = await res.json();
+    const token = data.token;
+    const el = document.getElementById('qr-tok');
+    if(el) el.textContent = token;
+    const pVal = document.getElementById('proj-token-val');
+    if(pVal) pVal.textContent = token;
+    renderTeacherQRSVG(token);
+  } catch(e) {
+    renderTeacherQRSVG('SA-LIVE-TOKEN');
+  }
+}
+
+function renderTeacherQRSVG(token){
+  const svg = document.getElementById('qr-svg');
+  if(!svg) return;
+  const ms = 8; const mods = 21;
+  let html = '';
+  [[0,0],[14,0],[0,14]].forEach(([row,col])=>{
+    for(let r=0;r<7;r++) for(let c2=0;c2<7;c2++){
+      const dark=r===0||r===6||c2===0||c2===6||(r>=2&&r<=4&&c2>=2&&c2<=4);
+      if(dark) html+=`<rect x="${(col+c2)*ms+5}" y="${(row+r)*ms+5}" width="${ms}" height="${ms}" fill="#0062FF"/>`;
+    }
+  });
+  for(let r=0;r<mods;r++) for(let c=0;c<mods;c++){
+    if(Math.random()<0.4) html+=`<rect x="${c*ms+5}" y="${r*ms+5}" width="${ms}" height="${ms}" fill="#0062FF"/>`;
+  }
+  svg.innerHTML = html;
+  const pSvg = document.getElementById('proj-qr-svg');
+  if(pSvg) pSvg.innerHTML = html;
+}
+
+// ── S-DEANAT (ДЕКАНАТ) ──
+async function initDean(){
+  try {
+    const res = await fetch('/api/dean/overview');
+    const data = await res.json();
+    if(data.success){
+      document.getElementById('ov-cls').textContent = data.stats.total_groups;
+      document.getElementById('ov-pre').textContent = data.stats.present;
+      document.getElementById('ov-lat').textContent = data.stats.late;
+      document.getElementById('ov-sos').textContent = data.stats.sos;
+
+      // Опоздавшие студенты
+      const alerts = document.getElementById('d-alerts');
+      if(alerts && data.late_students){
+        alerts.innerHTML = data.late_students.map(s => `
+          <div class="al">
+            <strong>⚠️ Кешігу: ${s.student_name} (${s.group_name})</strong>
+            <span>Сабақ: ${s.lesson_title} (+${s.delay_minutes} минут)</span>
+            <span class="al-time">🕐 ${s.check_in_time || 'Бүгін'}</span>
+          </div>
+        `).join('');
+      }
+
+      // Группы
+      const gbars = document.getElementById('gbars');
+      if(gbars && data.group_stats){
+        gbars.innerHTML = data.group_stats.map(g => {
+          const pct = g.total > 0 ? Math.round((g.attended / g.total) * 100) : 85;
+          return `
+            <div class="gbr">
+              <div class="glbl">${g.group_name}</div>
+              <div class="gbw"><div class="gbb" style="width:${pct}%;background:#0062FF"></div></div>
+              <div class="gpct">${pct}%</div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+  } catch(e) {
+    console.error("Dean error:", e);
+  }
+}
+
+// Анимация прогресс-бара
+function animBar(barId, cb){
+  const bar = document.getElementById(barId);
+  if(!bar) return;
+  bar.style.width = '0%';
+  let p = 0;
+  const iv = setInterval(()=>{
+    p += 4;
+    bar.style.width = p + '%';
+    if(p >= 100){ clearInterval(iv); if(cb) setTimeout(cb, 100); }
+  }, 40);
+}
+
+// Модалка карты кампуса
+function openCampusMapModal(poi){
+  const overlay = document.getElementById('map-modal-overlay');
+  const iframe = document.getElementById('map-iframe');
+  if(iframe){
+    iframe.src = poi ? `/map?poi=${encodeURIComponent(poi)}` : '/map';
+  }
+  if(overlay) overlay.classList.remove('hide');
+}
+function closeCampusMapModal(){
+  const overlay = document.getElementById('map-modal-overlay');
+  if(overlay) overlay.classList.add('hide');
+}
+
+// Инициализация при загрузке
+document.addEventListener('DOMContentLoaded', () => {
+  // Устанавливаем сегодняшние даты в форме расписки
+  const today = new Date().toISOString().split('T')[0];
+  const fromEl = document.getElementById('pnote-from');
+  const toEl = document.getElementById('pnote-to');
+  if(fromEl) fromEl.value = today;
+  if(toEl) toEl.value = today;
+});
+</script>
+
+<!-- Fullscreen Projector Modal for Lecture Halls / PC / Laptops -->
+<div id="projector-overlay" class="projector-modal hidden">
+  <div class="projector-header">
+    <div class="projector-title-block">
+      <div class="proj-badge">АУДИТОРИЯДАҒЫ ПРОЕКТОР РЕЖИМІ • FULLSCREEN LECTURE HALL</div>
+      <h1 id="proj-lesson-title">Информатика негіздері</h1>
+      <p id="proj-lesson-meta">Аудитория 312-А • Топ: ИС-21-01 • Оқытушы: Профессор А. Сейітов</p>
+    </div>
+    <div class="projector-actions">
+      <div class="proj-timer-card">
+        <span class="proj-timer-lbl">АВТОЖАҢАРТУ:</span>
+        <strong id="proj-timer-val">15</strong>
+        <span class="proj-timer-sec">сек</span>
+      </div>
+      <button class="btn-proj-close" onclick="closeProjectorMode()" title="Шығу (Esc)">✕</button>
+    </div>
+  </div>
+
+  <div class="projector-body">
+    <div class="projector-qr-card">
+      <div class="proj-qr-wrapper">
+        <svg id="proj-qr-svg" width="340" height="340" viewBox="0 0 190 190" fill="none"></svg>
+      </div>
+      <div class="proj-token-display">
+        <span>Динамикалық токен:</span>
+        <code id="proj-token-val">SA-LIVE-TOKEN</code>
+      </div>
+      <div class="proj-progress-wrap">
+        <div class="proj-progress-bar" id="proj-progress-bar"></div>
+      </div>
+    </div>
+
+    <div class="projector-live-stats">
+      <div class="proj-stat-box green">
+        <span class="proj-stat-num" id="proj-stat-present">0</span>
+        <span class="proj-stat-lbl">Қатысты (Present)</span>
+      </div>
+      <div class="proj-stat-box red">
+        <span class="proj-stat-num" id="proj-stat-late">0</span>
+        <span class="proj-stat-lbl">Кешікті (Late)</span>
+      </div>
+      <div class="proj-stat-box blue">
+        <span class="proj-stat-num" id="proj-stat-total">12</span>
+        <span class="proj-stat-lbl">Тізімдегі студенттер</span>
+      </div>
+      <div class="proj-instruction-card">
+        <h3>📱 Студенттерге арналған нұсқаулық:</h3>
+        <ol>
+          <li><strong>SmartAttend</strong> мобильді қосымшасын (Flutter) ашыңыз.</li>
+          <li>Камераны үлкен экрандағы осы QR-кодқа бағыттаңыз.</li>
+          <li><strong>Face ID</strong> биометриясы арқылы селфи тексеруден өтіңіз.</li>
+          <li>5 минуттан кейін кешігу автоматты түрде белгіленеді!</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     AITU 3D CAMPUS MAP MODAL (WEB EMBED)
+════════════════════════════════════════════ -->
+<div id="map-modal-overlay" class="moverlay hide" style="z-index:99999;padding:0;">
+  <div style="width:95vw;height:92vh;background:#0A0E17;border-radius:24px;border:1px solid rgba(255,255,255,0.12);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,0.85);">
+    <div style="height:54px;background:#0E131D;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="background:linear-gradient(135deg,#4F46E5,#06B6D4);color:#fff;font-weight:900;font-size:11px;padding:4px 10px;border-radius:6px;letter-spacing:0.05em;">AITU CAMPUS</span>
+        <strong style="color:#fff;font-size:14px;letter-spacing:-0.01em;">Интерактивная 3D Карта Кампуса (Блок C1.1 • C1.2 • C1.3)</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <a href="/map" target="_blank" class="btn btn-ghost sm" style="color:#38BDF8;border-color:rgba(56,189,248,0.4);font-size:12px;">↗ В отдельном окне</a>
+        <button class="btn-proj-close" onclick="closeCampusMapModal()" style="width:36px;height:36px;font-size:16px;">✕</button>
+      </div>
+    </div>
+    <iframe id="map-iframe" src="/map" style="width:100%;flex:1;border:none;"></iframe>
+  </div>
+</div>
+
+<script>
+function openCampusMapModal(poi) {
+  const modal = document.getElementById('map-modal-overlay');
+  const iframe = document.getElementById('map-iframe');
+  if (poi) {
+    iframe.src = '/map?poi=' + encodeURIComponent(poi);
+  } else {
+    iframe.src = '/map';
+  }
+  modal.classList.remove('hide');
+}
+function closeCampusMapModal() {
+  const modal = document.getElementById('map-modal-overlay');
+  if (modal) modal.classList.add('hide');
+}
+</script>
+
+<!-- ════════════════════════════════════════════
+     AITU STUDENT DIGITAL ID & PROFILE MODAL (WEB EMBED)
+════════════════════════════════════════════ -->
+<div id="profile-modal-overlay" class="moverlay hide" style="z-index:99999;padding:0;">
+  <div style="width:95vw;max-width:440px;height:92vh;background:#0F172A;border-radius:28px;border:1px solid rgba(255,255,255,0.12);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,0.85);">
+    <div style="height:50px;background:#0E131D;display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="background:#0062FF;color:#fff;font-weight:900;font-size:11px;padding:3px 8px;border-radius:6px;letter-spacing:0.05em;">DIGITAL ID</span>
+        <strong style="color:#fff;font-size:13.5px;">Студент Профилі</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <a href="/profile" target="_blank" class="btn btn-ghost sm" style="color:#38BDF8;border-color:rgba(56,189,248,0.4);font-size:11px;padding:4px 8px;">↗ Ашу</a>
+        <button class="btn-proj-close" onclick="closeStudentProfileModal()" style="width:32px;height:32px;font-size:15px;color:#fff;cursor:pointer;">✕</button>
+      </div>
+    </div>
+    <iframe id="profile-iframe" src="/profile" style="width:100%;flex:1;border:none;"></iframe>
+  </div>
+</div>
+
+<script>
+function openStudentProfileModal() {
+  const modal = document.getElementById('profile-modal-overlay');
+  const iframe = document.getElementById('profile-iframe');
+  if (iframe) iframe.src = '/profile';
+  if (modal) modal.classList.remove('hide');
+}
+function closeStudentProfileModal() {
+  const modal = document.getElementById('profile-modal-overlay');
+  if (modal) modal.classList.add('hide');
+}
+</script>
+
+
+
+<script>
+window.addEventListener('load', () => {
+  const p = new URLSearchParams(window.location.search);
+  if (p.get('demo') === 'student_map') {
+    if (typeof fillDemo === 'function') fillDemo('student');
+    if (typeof handleLogin === 'function') handleLogin();
+    setTimeout(() => {
+      if (typeof openCampusMapModal === 'function') openCampusMapModal('312');
+    }, 400);
+  } else if (p.get('demo') === 'student') {
+    if (typeof fillDemo === 'function') fillDemo('student');
+    if (typeof handleLogin === 'function') handleLogin();
+  }
+});
+</script>
+
+</body>
+
+</html>
