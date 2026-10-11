@@ -558,38 +558,43 @@ class _DirectorDashboardState extends State<DirectorDashboard> {
 
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-      child: Row(
-        children: [
-          _navTab(
-            index: 0,
-            label: 'Бақылау & HR',
-            icon: Icons.dashboard_customize_rounded,
-            badge: pendingCount > 0 ? '$pendingCount' : null,
-          ),
-          const SizedBox(width: 8),
-          _navTab(
-            index: 1,
-            label: 'Хабарламалар',
-            icon: Icons.campaign_rounded,
-          ),
-          const SizedBox(width: 8),
-          _navTab(
-            index: 2,
-            label: 'Грант қаупі',
-            icon: Icons.warning_amber_rounded,
-            badge: '4',
-            badgeColor: const Color(0xFFEF4444),
-          ),
-          const SizedBox(width: 8),
-          _navTab(
-            index: 3,
-            label: 'Базаға қосу',
-            icon: Icons.person_add_alt_1_rounded,
-            badge: _dbUsers.isNotEmpty ? '${_dbUsers.length}' : null,
-            badgeColor: const Color(0xFF10B981),
-          ),
-        ],
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
+          children: [
+            _navTab(
+              index: 0,
+              label: 'Бақылау & HR',
+              icon: Icons.dashboard_customize_rounded,
+              badge: pendingCount > 0 ? '$pendingCount' : null,
+            ),
+            const SizedBox(width: 8),
+            _navTab(
+              index: 1,
+              label: 'Хабарламалар',
+              icon: Icons.campaign_rounded,
+            ),
+            const SizedBox(width: 8),
+            _navTab(
+              index: 2,
+              label: 'Грант қаупі',
+              icon: Icons.warning_amber_rounded,
+              badge: '4',
+              badgeColor: const Color(0xFFEF4444),
+            ),
+            const SizedBox(width: 8),
+            _navTab(
+              index: 3,
+              label: 'Базаға қосу',
+              icon: Icons.person_add_alt_1_rounded,
+              badge: _dbUsers.isNotEmpty ? '${_dbUsers.length}' : null,
+              badgeColor: const Color(0xFF10B981),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -602,63 +607,61 @@ class _DirectorDashboardState extends State<DirectorDashboard> {
     Color? badgeColor,
   }) {
     final isSelected = _activeNav == index;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          if (_activeNav == index) return;
-          PageLoaderService().show(lang: widget.lang);
-          setState(() => _activeNav = index);
-          Future.delayed(const Duration(milliseconds: 260), () {
-            PageLoaderService().hide();
-          });
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 9),
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF0062FF) : const Color(0xFFF1F5F9),
-            borderRadius: BorderRadius.circular(10),
+    return GestureDetector(
+      onTap: () {
+        if (_activeNav == index) return;
+        PageLoaderService().show(lang: widget.lang);
+        setState(() => _activeNav = index);
+        Future.delayed(const Duration(milliseconds: 260), () {
+          PageLoaderService().hide();
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF0062FF) : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF0062FF) : const Color(0xFFE2E8F0),
+            width: 1,
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 16,
-                color: isSelected ? Colors.white : const Color(0xFF64748B),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected ? Colors.white : const Color(0xFF64748B),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : const Color(0xFF334155),
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                fontSize: 12.5,
               ),
+            ),
+            if (badge != null) ...[
               const SizedBox(width: 6),
-              Flexible(
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                decoration: BoxDecoration(
+                  color: badgeColor ?? (isSelected ? Colors.white : const Color(0xFFEF4444)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 child: Text(
-                  label,
+                  badge,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : const Color(0xFF334155),
-                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                    fontSize: 12,
+                    color: isSelected && badgeColor == null ? const Color(0xFF0062FF) : Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 10,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (badge != null) ...[
-                const SizedBox(width: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: badgeColor ?? (isSelected ? Colors.white : const Color(0xFFEF4444)),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    badge,
-                    style: TextStyle(
-                      color: isSelected && badgeColor == null ? const Color(0xFF0062FF) : Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 10,
-                    ),
-                  ),
-                ),
-              ],
             ],
-          ),
+          ],
         ),
       ),
     );
@@ -670,7 +673,7 @@ class _DirectorDashboardState extends State<DirectorDashboard> {
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // ── College KPI Summary Cards ──
           Row(
@@ -725,6 +728,7 @@ class _DirectorDashboardState extends State<DirectorDashboard> {
 
           // ── Official Ministry Export Banner ──
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
@@ -758,6 +762,7 @@ class _DirectorDashboardState extends State<DirectorDashboard> {
                 const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         'ҰОБД / МОН РК Ресми Есебі',
@@ -775,6 +780,7 @@ class _DirectorDashboardState extends State<DirectorDashboard> {
                     ],
                   ),
                 ),
+                const SizedBox(width: 10),
                 ElevatedButton(
                   onPressed: _exportMinistryReport,
                   style: ElevatedButton.styleFrom(
