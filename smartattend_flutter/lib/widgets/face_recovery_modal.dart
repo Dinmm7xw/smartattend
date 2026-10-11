@@ -110,7 +110,13 @@ class _FaceRecoveryModalState extends State<FaceRecoveryModal>
       });
       _startCamera();
     } else {
-      setState(() => _error = res['message']?.toString() ?? 'Пайдаланушы табылмады');
+      final rawMsg = res['message']?.toString() ?? '';
+      final friendly = rawMsg.contains('Not Found') || rawMsg.contains('табылмады')
+          ? (widget.lang == 'ru'
+              ? 'Пользователь не найден в базе колледжа (или сервер обновляется)'
+              : 'Колледж базасынан қолданушы табылмады')
+          : rawMsg;
+      setState(() => _error = friendly);
     }
   }
 
