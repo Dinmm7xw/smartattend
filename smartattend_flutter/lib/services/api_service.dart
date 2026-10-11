@@ -9,20 +9,21 @@ import 'package:http_parser/http_parser.dart';
 import '../models/models.dart';
 
 class ApiService {
-  // На Android Emulator адрес хост-компьютера: 10.0.2.2:8585
-  // На iOS симуляторе / ПК: localhost:8585
+  // Production Cloud Backend (Render.com + Supabase)
+  static const String cloudBackendUrl = 'https://smartattend-9b3f.onrender.com';
+
   static String get baseUrl {
     if (kIsWeb) {
-      final host = Uri.base.host.isNotEmpty ? Uri.base.host : 'localhost';
-      return 'http://$host:8585';
+      final host = Uri.base.host;
+      if (host.contains('localhost') || host == '127.0.0.1') {
+        return 'http://localhost:8585';
+      }
+      return cloudBackendUrl;
     }
-    try {
-      if (Platform.isAndroid) return 'http://10.0.2.2:8585';
-    } catch (_) {}
-    return 'http://172.20.10.3:8585';
+    return cloudBackendUrl;
   }
 
-  static const Duration timeout = Duration(seconds: 4);
+  static const Duration timeout = Duration(seconds: 15);
 
   // ── Real Backend Login ─────────────────────────────────────
   static Future<Map<String, dynamic>> login({

@@ -1,0 +1,231 @@
+/* SmartAttend — Global Page Transition Loader & Transparent Stickers System */
+
+:root {
+  --sa-loader-z: 99999;
+  --sa-blur: 6px;
+  --sa-overlay-bg: rgba(11, 19, 43, 0.72);
+  --sa-card-bg: rgba(15, 23, 42, 0.65);
+  --sa-card-border: rgba(255, 255, 255, 0.16);
+  --sa-accent-blue: #0062FF;
+  --sa-accent-cyan: #38BDF8;
+  --sa-accent-green: #10B981;
+}
+
+/* ── 1. GLOBAL SEMI-TRANSPARENT FROSTED OVERLAY ── */
+#sa-page-loader-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: var(--sa-loader-z);
+  background: var(--sa-overlay-bg);
+  backdrop-filter: blur(var(--sa-blur));
+  -webkit-backdrop-filter: blur(var(--sa-blur));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 100ms ease-out, visibility 100ms ease-out;
+}
+
+#sa-page-loader-overlay.sa-active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: all;
+}
+
+#sa-page-loader-overlay.sa-hiding {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 150ms ease-in, visibility 150ms ease-in;
+  pointer-events: none;
+}
+
+/* ── 2. SEAMLESS FLOATING LOADER (NO INNER BOX BACKGROUND) ── */
+.sa-loader-sticker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  position: relative;
+  overflow: visible;
+  animation: saCardFloat 3s ease-in-out infinite;
+}
+
+/* Hide sticker glass shine overlay */
+.sa-loader-sticker::before {
+  display: none !important;
+}
+
+@keyframes saCardFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* ── 3. SMARTATTEND LOGO CONTAINER ── */
+.sa-loader-logo-wrap {
+  width: 74px;
+  height: 74px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.sa-loader-logo-glow {
+  position: absolute;
+  inset: -6px;
+  border-radius: 20px;
+  background: radial-gradient(circle, rgba(0, 98, 255, 0.4) 0%, rgba(16, 185, 129, 0.2) 60%, transparent 80%);
+  filter: blur(8px);
+  animation: saLogoPulse 2s ease-in-out infinite;
+}
+
+@keyframes saLogoPulse {
+  0%, 100% { opacity: 0.55; transform: scale(0.96); }
+  50% { opacity: 0.95; transform: scale(1.08); }
+}
+
+.sa-loader-logo-img {
+  width: 76px;
+  height: 76px;
+  background: transparent !important;
+  position: relative;
+  z-index: 2;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 24px rgba(0, 98, 255, 0.45));
+}
+
+/* SVG Vector Fallback / Enhanced Overlay */
+.sa-loader-logo-svg {
+  width: 68px;
+  height: 68px;
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.4));
+}
+
+/* ── 4. HANDWRITING STYLUS & TYPEWRITER TEXT ROW ── */
+.sa-loader-text-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  position: relative;
+  min-height: 28px;
+}
+
+.sa-loader-typewriter {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #FFFFFF;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+}
+
+/* Animated Stylus / Pen */
+.sa-loader-pen-holder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 22px;
+  height: 22px;
+  transform-origin: 4px 18px;
+  animation: saPenWriting 0.65s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+@keyframes saPenWriting {
+  0% {
+    transform: translate(0, 0) rotate(-16deg);
+  }
+  25% {
+    transform: translate(2px, -3px) rotate(-8deg);
+  }
+  50% {
+    transform: translate(3px, 1px) rotate(-22deg);
+  }
+  75% {
+    transform: translate(1px, -2px) rotate(-12deg);
+  }
+  100% {
+    transform: translate(0, 0) rotate(-16deg);
+  }
+}
+
+.sa-loader-pen-svg {
+  width: 22px;
+  height: 22px;
+  filter: drop-shadow(0 2px 4px rgba(0, 98, 255, 0.5));
+}
+
+/* Ink Trail / Underline sparkle */
+.sa-loader-ink-line {
+  width: 100%;
+  height: 2px;
+  margin-top: 12px;
+  background: linear-gradient(90deg, transparent, #0062FF, #10B981, transparent);
+  border-radius: 2px;
+  opacity: 0.7;
+  animation: saInkFlow 1.6s ease-in-out infinite;
+}
+
+@keyframes saInkFlow {
+  0% { transform: scaleX(0.3); opacity: 0.3; }
+  50% { transform: scaleX(1); opacity: 0.85; }
+  100% { transform: scaleX(0.3); opacity: 0.3; }
+}
+
+/* ── 5. TRANSPARENT STICKERS (GLASSMORPHIC CHIPS / PILLS) ── */
+.sa-sticker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #FFFFFF;
+}
+
+.sa-sticker:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+.sa-sticker-primary {
+  background: rgba(0, 98, 255, 0.22);
+  border-color: rgba(96, 165, 250, 0.45);
+  color: #93C5FD;
+}
+
+.sa-sticker-success {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: rgba(52, 211, 153, 0.45);
+  color: #A7F3D0;
+}
+
+.sa-sticker-warning {
+  background: rgba(245, 158, 11, 0.22);
+  border-color: rgba(251, 191, 36, 0.45);
+  color: #FDE68A;
+}
