@@ -745,51 +745,57 @@ class _DirectorDashboardState extends State<DirectorDashboard> {
                 ),
               ],
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0062FF).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.cloud_download_rounded, color: Color(0xFF60A5FA), size: 24),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'ҰОБД / МОН РК Ресми Есебі',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                        ),
+                Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0062FF).withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Министрлік стандарты бойынша дайын есепті жүктеу',
-                        style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11),
+                      child: const Center(
+                        child: Icon(Icons.cloud_download_rounded, color: Color(0xFF60A5FA), size: 22),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'ҰОБД / МОН РК Ресми Есебі',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Министрлік стандарты бойынша дайын есеп',
+                            style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11.5),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                ElevatedButton(
+                const SizedBox(height: 14),
+                ElevatedButton.icon(
                   onPressed: _exportMinistryReport,
+                  icon: const Icon(Icons.file_download_outlined, size: 16),
+                  label: const Text('Ресми есепті жүктеу (Excel / PDF)', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF0062FF),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: const Text('Жүктеу', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
                 ),
               ],
             ),
