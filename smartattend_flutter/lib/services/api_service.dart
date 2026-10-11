@@ -1,7 +1,6 @@
 // SmartAttend — API Service (Synchronized with FastAPI port 8585 & Android Studio)
 
 import 'dart:convert';
-import 'dart:io' show Platform;
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
@@ -529,8 +528,96 @@ class ApiService {
       return {
         'detected': false,
         'confidence': 0.0,
-        'message': 'Тексеру қатесі',
+        'message': 'Тексеру қатесі: $e',
+      };
+    }
+  }
+
+  // ── Smart AI Navigator & Assistant ───────────────────────
+  static Future<Map<String, dynamic>> askAI({
+    required String prompt,
+    String role = 'STUDENT',
+    String userName = 'Қолданушы',
+    int currentFloor = 3,
+  }) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/ai/ask'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'prompt': prompt,
+          'role': role,
+          'user_name': userName,
+          'current_floor': currentFloor,
+        }),
+      ).timeout(const Duration(seconds: 20));
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(res.bodyBytes));
+        return {
+          'success': true,
+          'reply': data['reply'] ?? '',
+          'action': data['action'],
+        };
+      } else {
+        return {
+          'success': false,
+          'reply': 'ИИ жауап беруде қателік туындады (${res.statusCode})',
+          'action': null,
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'reply': 'ИИ желілік қатесі: $e',
+        'action': null,
+      };
+    }
+  }
+
+  // ── Smart AI Dean Schedule OCR ────────────────────────────
+  static Future<Map<String, dynamic>> scanScheduleAI({
+    required List<int> imageBytes,
+    String filename = 'schedule.jpg',
+  }) async {
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/api/ai/schedule/scan-image'),
+      );
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          imageBytes,
+          filename: filename,
+          contentType: MediaType('image', 'jpeg'),
+        ),
+      );
+
+      final streamedRes = await request.send().timeout(const Duration(seconds: 40));
+      final res = await http.Response.fromStream(streamedRes);
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(utf8.decode(res.bodyBytes));
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Кесте сәтті енгізілді!',
+          'saved_count': data['saved_count'] ?? 0,
+          'lessons': data['lessons'] ?? [],
+        };
+      } else {
+        final data = jsonDecode(utf8.decode(res.bodyBytes));
+        return {
+          'success': false,
+          'message': data['detail'] ?? 'Кестені оқу сәтсіз аяқталды',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'ИИ кесте өңдеу қатесі: $e',
       };
     }
   }
 }
+

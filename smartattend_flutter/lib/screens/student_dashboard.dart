@@ -10,6 +10,7 @@ import '../models/models.dart';
 import '../widgets/real_map_web.dart';
 import '../services/notification_service.dart';
 import '../services/page_loader_service.dart';
+import '../widgets/smart_ai_dialog.dart';
 
 class StudentDashboard extends StatefulWidget {
   final UserModel user;
@@ -134,6 +135,30 @@ class _StudentDashboardState extends State<StudentDashboard>
             ),
             _buildBottomNav(),
           ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'student_ai_fab',
+        onPressed: () {
+          SmartAIDialog.show(
+            context,
+            userRole: widget.user.role,
+            userName: widget.user.name,
+            lang: widget.lang,
+            onNavigateToFloor: (floor, room) {
+              _switchTab(2); // Open map tab
+            },
+          );
+        },
+        backgroundColor: const Color(0xFF2563EB),
+        icon: const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+        label: Text(
+          widget.lang == 'ru' ? 'AI Гид' : 'AI Навигатор',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
         ),
       ),
     );

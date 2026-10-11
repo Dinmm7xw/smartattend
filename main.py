@@ -1879,6 +1879,216 @@ async def serve_js():
 async def serve_floors():
     return FileResponse(os.path.join(STATIC_DIR, "aitu_floors_data.js"), media_type="application/javascript")
 
+# ════════════════════════════════════════════════════════════════
+# 🤖 SMARTCAMPUS GEMINI AI SUITE (Vision OCR & Campus Navigator)
+# ════════════════════════════════════════════════════════════════
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+
+import requests
+import json
+import base64
+
+class AIAskRequest(BaseModel):
+    prompt: str
+    role: Optional[str] = "STUDENT"
+    user_name: Optional[str] = "Студент"
+    current_floor: Optional[int] = 3
+
+@app.post("/api/ai/ask")
+async def ai_ask_assistant(req: AIAskRequest):
+    """
+    Умный навигатор и консультант колледжа:
+    - Отвечает, на каком этаже кабинет (например, 221 -> 2 этаж, блок C1.2)
+    - Подсказывает преподавателя, предметы и правила
+    - Возвращает action для автоматического переключения этажа карты в UI
+    """
+    prompt = req.prompt.strip()
+    if not prompt:
+        raise HTTPException(status_code=400, detail="Empty prompt")
+
+    system_instruction = (
+        "Ты — официальный ИИ-ассистент колледжа SmartAttend (Astana IT College, Корпус C1). "
+        "Твоя цель — помогать студентам, преподавателям и деканату.\n"
+        "Справочник этажей и аудиторий блока C1:\n"
+        "- 1 этаж (C1.1): Асхана (столовая), Кітапхана (библиотека), Спортзал, Медпункт (143), Акт залы (Assembly Hall).\n"
+        "- 2 этаж (C1.2): Деканат (IT-факультет), Оқытушылар бөлмесі (Кафедра), 215 (Киберқауіпсіздік), 218, 221, 222 (Дәрісханалар).\n"
+        "- 3 этаж (C1.3): 241 (Мобильді әзірлеу зертханасы, БҚ2405), 240 (Серверлік жүйелер), 238 (Желілер), 220, 228 (Алгоритмдер), 229 (Деректер қоры), 230 (Web), 237 (Жасанды интеллект орталығы).\n"
+        "Правило форматирования ответа:\n"
+        "Отвечай дружелюбно на языке запроса (казахский или русский). "
+        "Если пользователь спрашивает, где находится кабинет или зона, обязательно чётко укажи: ЭТАЖ, БЛОК и ориентир.\n"
+        "Также, если в вопросе упомянут конкретный кабинет/этаж, в самом конце своего ответа добавь техническую JSON-строку формата: "
+        "`###ACTION:{\"target_floor\": 2, \"room_code\": \"C1.2.221\"}###` (чтобы приложение переключило интерактивную карту на этот этаж!)."
+    )
+
+    gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key={GEMINI_API_KEY}"
+    
+    payload = {
+        "contents": [
+            {
+                "role": "user",
+                "parts": [
+                    {"text": f"{system_instruction}\n\nПользователь ({req.role}, {req.user_name}): {prompt}"}
+                ]
+            }
+        ],
+        "generationConfig": {
+            "temperature": 0.4,
+            "maxOutputTokens": 600
+        }
+    }
+
+    try:
+        res = requests.post(gemini_url, json=payload, timeout=35)
+        data = res.json()
+        candidates = data.get("candidates", [])
+        if candidates and "content" in candidates[0]:
+            full_text = candidates[0]["content"]["parts"][0]["text"]
+            
+            # Извлекаем ACTION если есть
+            action_data = None
+            if "###ACTION:" in full_text:
+                parts = full_text.split("###ACTION:")
+                clean_reply = parts[0].strip()
+                action_raw = parts[1].split("###")[0].strip()
+                try:
+                    action_data = json.loads(action_raw)
+                except Exception:
+                    pass
+            else:
+                clean_reply = full_text.strip()
+
+            return {
+                "reply": clean_reply,
+                "action": action_data
+            }
+        else:
+            return {
+                "reply": "Кешіріңіз, ИИ жүйесі жауап бере алмады. Қайта сұрап көріңіз.",
+                "action": None
+            }
+    except Exception as e:
+        return {
+            "reply": f"ИИ серверіне қосылуда қате орын алды: {e}",
+            "action": None
+        }
+
+@app.post("/api/ai/schedule/scan-image")
+async def ai_scan_schedule_image(file: UploadFile = File(...)):
+    """
+    Деканат үшін ИИ-Кесте енгізу:
+    Gemini 1.5 Flash Vision фотосуреттегі кестені оқып, сабақтарды құрылымдап Supabase-ке сақтайды.
+    """
+    try:
+        contents = await file.read()
+        b64_image = base64.b64encode(contents).decode("utf-8")
+        mime_type = file.content_type or "image/jpeg"
+
+        gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key={GEMINI_API_KEY}"
+
+        prompt_text = (
+            "Сен колледждегі расписание кестесін оқитын сарапшысың. "
+            "Берілген фотосуреттегі немесе құжаттағы сабақ кестесін мұқият оқып, тек қана таза JSON массивін қайтар. "
+            "Әрбір сабақ үшін келесі өрістерді тап: "
+            "1. title: сабақ/пән атауы (мысалы: 'Мобильді қосымшалар', 'Алгоритмдер') "
+            "2. room_code: аудитория коды (мысалы: 'C1.3.241', 'C1.2.215', '221') "
+            "3. day_of_week: апта күні ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday') "
+            "4. pair_number: пара нөмірі (1, 2, 3 немесе 4) "
+            "5. start_time: басталу уақыты ('08:30', '10:05', '11:40', '13:30' т.б.) "
+            "6. end_time: аяқталу уақыты ('09:50', '11:25', '13:00', '14:50' т.б.) "
+            "7. group_name: топ атауы (мысалы: 'БҚ2405', 'ПО2501') "
+            "8. teacher_name: оқытушының аты-жөні. "
+            "Жауапты тек таза JSON форматында бер, ешқандай түсініктемесіз және маркдаунсыз: "
+            "[{\"title\":\"...\",\"room_code\":\"...\",\"day_of_week\":\"...\",\"pair_number\":1,\"start_time\":\"...\",\"end_time\":\"...\",\"group_name\":\"...\",\"teacher_name\":\"...\"}]"
+        )
+
+        payload = {
+            "contents": [
+                {
+                    "role": "user",
+                    "parts": [
+                        {"text": prompt_text},
+                        {
+                            "inline_data": {
+                                "mime_type": mime_type,
+                                "data": b64_image
+                            }
+                        }
+                    ]
+                }
+            ],
+            "generationConfig": {
+                "temperature": 0.1,
+                "responseMimeType": "application/json"
+            }
+        }
+
+        res = requests.post(gemini_url, json=payload, timeout=45)
+        data = res.json()
+        candidates = data.get("candidates", [])
+        if not candidates or "content" not in candidates[0]:
+            raise HTTPException(status_code=500, detail="Gemini Vision did not return results")
+
+        raw_json_str = candidates[0]["content"]["parts"][0]["text"].strip()
+        # Очистка если есть markdown
+        if raw_json_str.startswith("```"):
+            raw_json_str = raw_json_str.split("\n", 1)[1]
+            if raw_json_str.endswith("```"):
+                raw_json_str = raw_json_str.rsplit("\n", 1)[0]
+
+        parsed_lessons = json.loads(raw_json_str)
+
+        # Автоматическое сохранение в Supabase / PostgreSQL
+        conn, db_type = get_db()
+        cur = conn.cursor()
+        saved_count = 0
+
+        for l in parsed_lessons:
+            title = l.get("title", "Сабақ")
+            room = l.get("room_code", "C1.3.241")
+            day = l.get("day_of_week", "Monday")
+            pair = int(l.get("pair_number", 1))
+            st = l.get("start_time", "08:30")
+            et = l.get("end_time", "09:50")
+            group_name = l.get("group_name", "БҚ2405")
+
+            # Обеспечиваем существование группы
+            if db_type == "postgres":
+                cur.execute("INSERT INTO academic_groups (name, faculty) VALUES (%s, %s) ON CONFLICT (name) DO NOTHING;", (group_name, "Ақпараттық технологиялар бөлімі"))
+                cur.execute("SELECT id FROM academic_groups WHERE name = %s;", (group_name,))
+                group_row = cur.fetchone()
+                gid = group_row["id"] if isinstance(group_row, dict) else group_row[0]
+
+                # Вставляем урок
+                cur.execute("""
+                    INSERT INTO lessons (title, room_code, day_of_week, pair_number, start_time, end_time, group_id, status)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, 'SCHEDULED');
+                """, (title, room, day, pair, st, et, gid))
+                saved_count += 1
+            else:
+                cur.execute("INSERT OR IGNORE INTO academic_groups (name, faculty) VALUES (?, ?);", (group_name, "Ақпараттық технологиялар бөлімі"))
+                cur.execute("SELECT id FROM academic_groups WHERE name = ?;", (group_name,))
+                group_row = cur.fetchone()
+                gid = group_row["id"] if isinstance(group_row, sqlite3.Row) else group_row[0]
+                cur.execute("""
+                    INSERT INTO lessons (title, room_code, day_of_week, pair_number, start_time, end_time, group_id, status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'SCHEDULED');
+                """, (title, room, day, pair, st, et, gid))
+                saved_count += 1
+
+        conn.commit()
+        conn.close()
+
+        return {
+            "success": True,
+            "detected_count": len(parsed_lessons),
+            "saved_count": saved_count,
+            "lessons": parsed_lessons,
+            "message": f"ИИ сәтті оқып шықты! Дерекқорға {saved_count} сабақ автоматты түрде қосылды ✅"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"ИИ-кесте қатесі: {e}")
+
+
 if __name__ == "__main__":
     import uvicorn
     print("\n" + "="*60)

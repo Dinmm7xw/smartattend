@@ -7,6 +7,7 @@ import '../constants/i18n.dart';
 import '../models/models.dart';
 import '../services/api_service.dart';
 import 'campus_map_screen.dart';
+import '../widgets/smart_ai_dialog.dart';
 
 class DeanDashboard extends StatefulWidget {
   final UserModel user;
@@ -64,6 +65,8 @@ class _DeanDashboardState extends State<DeanDashboard> {
                   const SizedBox(height: 14),
                   _buildCampusMapBanner(),
                   const SizedBox(height: 14),
+                  _buildAIScheduleBanner(),
+                  const SizedBox(height: 14),
                   if (_stats != null) ...[
                     _buildStatsGrid(_stats!),
                     const SizedBox(height: 14),
@@ -77,6 +80,27 @@ class _DeanDashboardState extends State<DeanDashboard> {
                 ]),
         )),
       ])),
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'dean_ai_fab',
+        onPressed: () {
+          SmartAIDialog.show(
+            context,
+            userRole: widget.user.role,
+            userName: widget.user.name,
+            lang: widget.lang,
+          );
+        },
+        backgroundColor: const Color(0xFF4F46E5),
+        icon: const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+        label: Text(
+          widget.lang == 'ru' ? 'AI Ассистент' : 'AI Көмекші',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
+        ),
+      ),
     );
   }
 
@@ -265,6 +289,131 @@ class _DeanDashboardState extends State<DeanDashboard> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: const Color(0xFF312E81),
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAIScheduleBanner() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0F172A), Color(0xFF1E293B), Color(0xFF334155)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                  ),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: const Icon(Icons.document_scanner_rounded, color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          widget.lang == 'kk'
+                              ? 'ИИ-Кесте енгізу'
+                              : (widget.lang == 'en' ? 'AI Schedule OCR' : 'ИИ-Ввод расписания'),
+                          style: const TextStyle(
+                            fontFamily: AppTextStyles.font,
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4F46E5),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'Vision AI',
+                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      widget.lang == 'kk'
+                          ? 'Кесте фотосын жүктеңіз — Gemini сабақтарды автоматты базаға қосады'
+                          : (widget.lang == 'en'
+                              ? 'Upload schedule photo — Gemini parses and saves lessons to DB'
+                              : 'Загрузите фото расписания — Gemini распознает и сохранит в базу'),
+                      style: TextStyle(
+                        fontFamily: AppTextStyles.font,
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                SmartAIDialog.show(
+                  context,
+                  userRole: widget.user.role,
+                  userName: widget.user.name,
+                  lang: widget.lang,
+                );
+              },
+              icon: const Icon(Icons.camera_alt_rounded, size: 18),
+              label: Text(
+                widget.lang == 'kk'
+                    ? '📸 Кесте фотосын тану және қосу'
+                    : (widget.lang == 'en'
+                        ? '📸 Scan Schedule Photo with AI'
+                        : '📸 Распознать фото расписания через ИИ'),
+                style: const TextStyle(
+                  fontFamily: AppTextStyles.font,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6366F1),
+                foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
