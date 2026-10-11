@@ -8,6 +8,8 @@ import '../constants/i18n.dart';
 import '../models/models.dart';
 import '../services/page_loader_service.dart';
 import 'campus_map_screen.dart';
+import 'profile_screen.dart';
+import '../widgets/user_avatar.dart';
 
 class TeacherDashboard extends StatefulWidget {
   final UserModel user;
@@ -71,12 +73,12 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       child: Row(children: [
         // Avatar
-        Container(
-          width: 40, height: 40,
-          decoration: BoxDecoration(color: AppColors.teacher, borderRadius: BorderRadius.circular(AppRadius.pill)),
-          child: Center(child: Text(
-            widget.user.name.isNotEmpty ? widget.user.name.substring(0, 2).toUpperCase() : 'TC',
-            style: const TextStyle(fontFamily: AppTextStyles.font, color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
+        UserAvatar(
+          name: widget.user.name,
+          size: 40,
+          color: AppColors.teacher,
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => ProfileScreen(user: widget.user, lang: widget.lang, onLogout: widget.onLogout),
           )),
         ),
         const SizedBox(width: 10),

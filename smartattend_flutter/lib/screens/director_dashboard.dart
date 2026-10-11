@@ -17,6 +17,8 @@ import '../services/notification_service.dart';
 import '../services/page_loader_service.dart';
 import '../utils/platform_helper.dart';
 import 'campus_map_screen.dart';
+import 'profile_screen.dart';
+import '../widgets/user_avatar.dart';
 
 class DirectorDashboard extends StatefulWidget {
   final UserModel user;
@@ -431,27 +433,13 @@ class _DirectorDashboardState extends State<DirectorDashboard> {
       child: Row(
         children: [
           // Director Avatar
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0A192F), Color(0xFF1E3A8A)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x1A0A192F),
-                  blurRadius: 8,
-                  offset: Offset(0, 3),
-                ),
-              ],
-            ),
-            child: const Center(
-              child: Icon(Icons.account_balance_rounded, color: Colors.white, size: 22),
-            ),
+          UserAvatar(
+            name: widget.user.name,
+            size: 44,
+            color: const Color(0xFF1E3A8A),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => ProfileScreen(user: widget.user, lang: widget.lang, onLogout: widget.onLogout),
+            )),
           ),
           const SizedBox(width: 12),
           // Director Title & Role

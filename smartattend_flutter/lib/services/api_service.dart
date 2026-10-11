@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import '../models/models.dart';
+import 'app_session.dart';
 
 class ApiService {
   // Production Cloud Backend (Render.com + Supabase)
@@ -42,6 +43,8 @@ class ApiService {
       final data = jsonDecode(res.body);
       if (res.statusCode == 200 && data['success'] == true) {
         final userData = data['user'];
+        AppSession.token = data['token']?.toString();
+        AppSession.avatarUrl.value = userData['avatar_url']?.toString();
         return {
           'success': true,
           'user': UserModel(
@@ -66,6 +69,53 @@ class ApiService {
       };
     }
   }
+  // ── Profile: change password ───────────────────────────────
+  static Future<Map<String, dynamic>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/auth/change-password'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${AppSession.token ?? ''}',
+        },
+        body: jsonEncode({
+          'current_password': currentPassword,
+          'new_password': newPassword,
+        }),
+      ).timeout(const Duration(seconds: 20));
+      final data = jsonDecode(res.body);
+      if (res.statusCode == 200) return {'success': true};
+      return {'success': false, 'message': data['detail']?.toString() ?? 'Қате'};
+    } catch (e) {
+      return {'success': false, 'message': 'Серверге қосылу қатесі: $e'};
+    }
+  }
+
+  // ── Profile: upload avatar ─────────────────────────────────
+  static Future<Map<String, dynamic>> uploadAvatar(Uint8List bytes) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/users/me/avatar'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${AppSession.token ?? ''}',
+        },
+        body: jsonEncode({'photo_base64': base64Encode(bytes)}),
+      ).timeout(const Duration(seconds: 40));
+      final data = jsonDecode(res.body);
+      if (res.statusCode == 200 && data['success'] == true) {
+        AppSession.avatarUrl.value = data['avatar_url']?.toString();
+        return {'success': true};
+      }
+      return {'success': false, 'message': data['detail']?.toString() ?? 'Қате'};
+    } catch (e) {
+      return {'success': false, 'message': 'Серверге қосылу қатесі: $e'};
+    }
+  }
+
 
   // ── Health Check ──────────────────────────────────────────
   static Future<bool> checkBackendHealth() async {

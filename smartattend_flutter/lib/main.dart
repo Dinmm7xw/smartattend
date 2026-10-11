@@ -6,6 +6,7 @@ import 'constants/theme.dart';
 import 'constants/i18n.dart';
 import 'models/models.dart';
 import 'services/api_service.dart';
+import 'services/app_session.dart';
 import 'screens/auth_screen.dart';
 import 'screens/student_dashboard.dart';
 import 'screens/teacher_dashboard.dart';
@@ -144,6 +145,7 @@ class _MainScreenState extends State<MainScreen> {
 
   void _handleLogout() {
     PageLoaderService().show(lang: _lang);
+    AppSession.clear();
     setState(() { _user = null; _attendedLessons.clear(); });
     Future.delayed(const Duration(milliseconds: 260), () {
       PageLoaderService().hide();
@@ -263,6 +265,7 @@ class _MainScreenState extends State<MainScreen> {
           onOpenSOS: () => setState(() => _showSOS = true),
           onOpenExcuse: () => _toast_('info', t['medical_excuse'] ?? '', ''),
           onOpenNotifications: () => setState(() => _showNotificationCenter = true),
+          onLogout: _handleLogout,
           lang: _lang,
         );
       case 'TEACHER':

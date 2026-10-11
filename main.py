@@ -281,9 +281,103 @@ async def login(payload: LoginRequest):
             "role": user_dict["role"],
             "student_id": user_dict.get("student_id"),
             "department": user_dict.get("department"),
-            "group_id": user_dict.get("group_id")
+            "group_id": user_dict.get("group_id"),
+            "avatar_url": user_dict.get("avatar_url")
         }
     }
+
+# ── ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ (для всех ролей): данные, смена пароля, смена фото ──
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+class UpdateAvatarRequest(BaseModel):
+    photo_base64: str
+
+MIN_PASSWORD_LENGTH = 6
+MAX_AVATAR_BASE64_CHARS = 12_000_000   # ~9 МБ исходного файла
+AVATAR_MAX_SIDE_PX = 320
+
+@app.get("/api/users/me")
+async def get_my_profile(current: dict = Depends(get_current_user)):
+    """Профиль текущего пользователя по JWT (ФИО, роль, группа, фото)."""
+    conn, engine = get_db()
+    cur = conn.cursor()
+    p_ph = "%s" if engine == "postgres" else "?"
+    cur.execute(f"SELECT id, email, full_name, role, student_id, department, avatar_url FROM users WHERE id = {p_ph}", (current["user_id"],))
+    row = cur.fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="Пайдаланушы табылмады")
+    return {"success": True, "user": dict(row)}
+
+@app.post("/api/auth/change-password")
+async def change_password(req: ChangePasswordRequest, current: dict = Depends(get_current_user)):
+    """Смена пароля: нужно знать текущий пароль. Работает для всех ролей."""
+    new_pwd = (req.new_password or "").strip()
+    old_pwd = (req.current_password or "").strip()
+
+    if len(new_pwd) < MIN_PASSWORD_LENGTH:
+        raise HTTPException(status_code=400, detail=f"Жаңа құпия сөз кемінде {MIN_PASSWORD_LENGTH} таңбадан тұруы керек")
+    if new_pwd == old_pwd:
+        raise HTTPException(status_code=400, detail="Жаңа құпия сөз ескісімен бірдей болмауы керек")
+
+    conn, engine = get_db()
+    cur = conn.cursor()
+    p_ph = "%s" if engine == "postgres" else "?"
+    cur.execute(f"SELECT id, password_hash FROM users WHERE id = {p_ph}", (current["user_id"],))
+    row = cur.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Пайдаланушы табылмады")
+    if dict(row)["password_hash"] != old_pwd:
+        conn.close()
+        raise HTTPException(status_code=403, detail="Ағымдағы құпия сөз қате")
+
+    cur.execute(f"UPDATE users SET password_hash = {p_ph} WHERE id = {p_ph}", (new_pwd, current["user_id"]))
+    conn.commit()
+    conn.close()
+    return {"success": True, "message": "Құпия сөз сәтті өзгертілді"}
+
+@app.post("/api/users/me/avatar")
+async def update_my_avatar(req: UpdateAvatarRequest, current: dict = Depends(get_current_user)):
+    """
+    Смена фото профиля для любой роли. Фото сжимается (макс. 320px, JPEG)
+    и хранится как data-URL в БД — файловая система Render эфемерна, файлы на диске пропадали бы.
+    """
+    import base64
+    import cv2
+
+    raw = req.photo_base64 or ""
+    if len(raw) > MAX_AVATAR_BASE64_CHARS:
+        raise HTTPException(status_code=413, detail="Сурет тым үлкен (макс. ~9 МБ)")
+    if "base64," in raw:
+        raw = raw.split("base64,", 1)[1]
+    try:
+        img_bytes = base64.b64decode(raw, validate=False)
+        img = cv2.imdecode(np.frombuffer(img_bytes, np.uint8), cv2.IMREAD_COLOR)
+    except Exception:
+        img = None
+    if img is None:
+        raise HTTPException(status_code=400, detail="Сурет оқылмады. JPG немесе PNG таңдаңыз")
+
+    h, w = img.shape[:2]
+    scale = AVATAR_MAX_SIDE_PX / max(h, w)
+    if scale < 1:
+        img = cv2.resize(img, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
+    ok, buf = cv2.imencode(".jpg", img, [int(cv2.IMWRITE_JPEG_QUALITY), 82])
+    if not ok:
+        raise HTTPException(status_code=500, detail="Суретті өңдеу сәтсіз аяқталды")
+    data_url = "data:image/jpeg;base64," + base64.b64encode(buf.tobytes()).decode("ascii")
+
+    conn, engine = get_db()
+    cur = conn.cursor()
+    p_ph = "%s" if engine == "postgres" else "?"
+    cur.execute(f"UPDATE users SET avatar_url = {p_ph} WHERE id = {p_ph}", (data_url, current["user_id"]))
+    conn.commit()
+    conn.close()
+    return {"success": True, "message": "Профиль суреті жаңартылды", "avatar_url": data_url}
 
 # ── S-STUDENT (СТУДЕНТ) ──
 

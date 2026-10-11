@@ -11,6 +11,8 @@ import '../widgets/real_map_web.dart';
 import '../services/notification_service.dart';
 import '../services/page_loader_service.dart';
 import '../widgets/smart_ai_dialog.dart';
+import '../widgets/user_avatar.dart';
+import 'profile_screen.dart';
 
 class StudentDashboard extends StatefulWidget {
   final UserModel user;
@@ -21,6 +23,7 @@ class StudentDashboard extends StatefulWidget {
   final VoidCallback onOpenExcuse;
   final VoidCallback? onOpenFaceVerify;
   final VoidCallback? onOpenNotifications;
+  final VoidCallback onLogout;
   final String lang;
 
   const StudentDashboard({
@@ -34,6 +37,7 @@ class StudentDashboard extends StatefulWidget {
     this.onOpenFaceVerify,
     this.onOpenNotifications,
     required this.lang,
+    required this.onLogout,
   });
 
   @override
@@ -172,29 +176,11 @@ class _StudentDashboardState extends State<StudentDashboard>
       child: Row(
         children: [
           // Avatar
-          GestureDetector(
+          UserAvatar(
+            name: widget.user.name,
+            size: 40,
+            color: AppColors.primary,
             onTap: () => _switchTab(3),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-              ),
-              child: Center(
-                child: Text(
-                  widget.user.name.isNotEmpty
-                      ? widget.user.name.substring(0, 2).toUpperCase()
-                      : 'ST',
-                  style: const TextStyle(
-                    fontFamily: AppTextStyles.font,
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
           ),
           const SizedBox(width: 10),
           // Title block
@@ -866,27 +852,11 @@ class _StudentDashboardState extends State<StudentDashboard>
                   children: [
                     Stack(
                       children: [
-                        Container(
-                          width: 58,
-                          height: 58,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFDBEAFE),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                          child: Center(
-                            child: Text(
-                              widget.user.name.isNotEmpty
-                                  ? widget.user.name.substring(0, 2).toUpperCase()
-                                  : 'СТ',
-                              style: const TextStyle(
-                                fontFamily: AppTextStyles.font,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w900,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
+                        UserAvatar(
+                          name: widget.user.name,
+                          size: 58,
+                          color: AppColors.primary,
+                          onTap: () => pickAndUploadAvatar(context, widget.lang),
                         ),
                         Positioned(
                           right: -2,
@@ -1189,11 +1159,19 @@ class _StudentDashboardState extends State<StudentDashboard>
                 ),
                 const Divider(height: 16),
                 _securityRow(
+                  Icons.photo_camera_outlined,
+                  widget.lang == 'ru' ? 'Фото профиля' : widget.lang == 'en' ? 'Profile photo' : 'Профиль фотосы',
+                  widget.lang == 'ru' ? 'Загрузить новое фото' : widget.lang == 'en' ? 'Upload a new photo' : 'Жаңа фото жүктеу',
+                  widget.lang == 'ru' ? 'Изменить' : widget.lang == 'en' ? 'Change' : 'Өзгерту',
+                  () => pickAndUploadAvatar(context, widget.lang),
+                ),
+                const Divider(height: 16),
+                _securityRow(
                   Icons.lock_outline,
                   'Жеке құпия сөз',
-                  'Соңғы өзгертілген: 12 қыркүйек',
+                  widget.lang == 'ru' ? 'Изменить пароль' : widget.lang == 'en' ? 'Change password' : 'Құпия сөзді өзгерту',
                   'Өзгерту',
-                  () {},
+                  () => showChangePasswordSheet(context, widget.lang),
                 ),
               ],
             ),
@@ -1263,6 +1241,24 @@ class _StudentDashboardState extends State<StudentDashboard>
                   ),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 52,
+            child: ElevatedButton.icon(
+              onPressed: () => confirmLogout(context, widget.lang, widget.onLogout),
+              icon: const Icon(Icons.logout_rounded),
+              label: Text(
+                widget.lang == 'ru' ? 'Выйти' : widget.lang == 'en' ? 'Log out' : 'Шығу',
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.dangerLight,
+                foregroundColor: AppColors.danger,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
             ),
           ),
           const SizedBox(height: 24),

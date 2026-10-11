@@ -8,6 +8,8 @@ import '../models/models.dart';
 import '../services/api_service.dart';
 import 'campus_map_screen.dart';
 import '../widgets/smart_ai_dialog.dart';
+import '../widgets/user_avatar.dart';
+import 'profile_screen.dart';
 
 class DeanDashboard extends StatefulWidget {
   final UserModel user;
@@ -109,12 +111,12 @@ class _DeanDashboardState extends State<DeanDashboard> {
       color: AppColors.surface,
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       child: Row(children: [
-        Container(
-          width: 40, height: 40,
-          decoration: BoxDecoration(color: AppColors.dean, borderRadius: BorderRadius.circular(AppRadius.pill)),
-          child: Center(child: Text(
-            widget.user.name.isNotEmpty ? widget.user.name.substring(0, 2).toUpperCase() : 'DC',
-            style: const TextStyle(fontFamily: AppTextStyles.font, color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
+        UserAvatar(
+          name: widget.user.name,
+          size: 40,
+          color: AppColors.dean,
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => ProfileScreen(user: widget.user, lang: widget.lang, onLogout: widget.onLogout),
           )),
         ),
         const SizedBox(width: 10),
