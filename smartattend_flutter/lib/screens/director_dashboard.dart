@@ -499,6 +499,7 @@ class _DirectorDashboardState extends State<DirectorDashboard> {
               PageLoaderService().show(lang: widget.lang);
               Future.delayed(const Duration(milliseconds: 220), () {
                 PageLoaderService().hide();
+                if (!mounted) return;
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -2679,7 +2680,7 @@ class _DirectorDashboardState extends State<DirectorDashboard> {
                                     width: 36,
                                     height: 36,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => const Icon(Icons.person, color: Color(0xFF0062FF)),
+                                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, color: Color(0xFF0062FF)),
                                   ),
                                 );
                               } catch (_) {

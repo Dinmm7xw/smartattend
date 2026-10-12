@@ -174,12 +174,12 @@ class _PageTransitionLoaderState extends State<PageTransitionLoader>
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF0062FF).withOpacity(glowOpacity),
+                    color: const Color(0xFF0062FF).withValues(alpha: glowOpacity),
                     blurRadius: 22,
                     spreadRadius: 2,
                   ),
                   BoxShadow(
-                    color: const Color(0xFF10B981).withOpacity(glowOpacity * 0.6),
+                    color: const Color(0xFF10B981).withValues(alpha: glowOpacity * 0.6),
                     blurRadius: 16,
                   ),
                 ],
@@ -191,7 +191,7 @@ class _PageTransitionLoaderState extends State<PageTransitionLoader>
               width: 72,
               height: 72,
               fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const _LogoFallbackPainterWidget(),
+              errorBuilder: (context, error, stackTrace) => const _LogoFallbackPainterWidget(),
             ),
           ],
         );

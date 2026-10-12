@@ -43,7 +43,7 @@ class UserAvatar extends StatelessWidget {
         : name.trim().split(RegExp(r'\s+')).take(2).map((e) => e[0].toUpperCase()).join();
     return ValueListenableBuilder<String?>(
       valueListenable: AppSession.avatarUrl,
-      builder: (_, url, __) {
+      builder: (_, url, child) {
         final img = providerFor(url);
         final circle = Container(
           width: size,
