@@ -38,7 +38,7 @@ class ApiService {
           'identifier': identifier,
           'password': password,
         }),
-      ).timeout(const Duration(seconds: 8));
+      ).timeout(const Duration(seconds: 30));
 
       final data = jsonDecode(res.body);
       if (res.statusCode == 200 && data['success'] == true) {
